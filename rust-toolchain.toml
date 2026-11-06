@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# The toolchain 3D-Bausteine is built on.
+#
+# It is the stable rustc that Aosabi pins, so the service and the engine it
+# links build with one compiler. The target wasm32-unknown-unknown is the one
+# of the renderer in the browser.
+
+[toolchain]
+channel = "1.95.0"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"

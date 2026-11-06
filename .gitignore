@@ -1,0 +1,13 @@
+# Rust build output
+target/
+
+# The products of tools/build.sh, which the build writes again
+web/pkg/
+dist/
+
+# Editor and platform leftovers
+.DS_Store
+
+# The executed notebooks and the caches of Python, which every run writes again
+tests/notebooks/out/
+__pycache__/

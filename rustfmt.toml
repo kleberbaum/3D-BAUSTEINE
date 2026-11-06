@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# The formatting of 3D-Bausteine, which is the one of Aosabi and of the kernel.
+#
+# The Rust guidelines of the Linux kernel say the code is formatted with
+# rustfmt at its default settings, so this file is the kernel's own
+# .rustfmt.toml with the edition of this workspace, 2024.
+
+edition = "2024"
+newline_style = "Unix"

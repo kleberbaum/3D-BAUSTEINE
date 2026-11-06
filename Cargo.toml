@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# The workspace of 3D-Bausteine in Rust.
+#
+# The geometry and its devtool are members of this workspace. The service
+# under service/ is a cargo workspace of its own, as every service of Aosabi
+# is, so cargo aosabi builds it wherever it stands, and so is the module of
+# the Web Worker under crates/bausteine-web, which links the copy of the
+# service that cargo aosabi generates.
+
+[workspace]
+resolver = "3"
+members = [
+    "crates/bausteine-core",
+    "crates/bausteine-devtool",
+]
+exclude = ["crates/bausteine-web", "service", "third_party"]
+
+[workspace.package]
+version = "2.0.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "GPL-2.0-only"
+authors = ["Florian Kleber <kleber@snek.at>"]
+repository = "https://github.com/kleberbaum/3D-BAUSTEINE"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# Geometry turns counts into coordinates and coordinates into pixels all
+# the time, and every such value is far below the range where a cast loses
+# anything that is visible on a screen.
+cast_precision_loss = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_possible_wrap = "allow"
+# A matrix and a vector name their components x, y, z and w.
+many_single_char_names = "allow"
+similar_names = "allow"

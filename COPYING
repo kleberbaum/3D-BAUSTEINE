@@ -1,0 +1,37 @@
+3D-Bausteine holds two programs under two different terms.
+
+1. Version 1.3 of 2002 by Herbert Kleber
+
+   The files of version 1.3 at the root of this repository, the forms
+   (*.frm, *.frx), the modules (*.bas), the project files (*.vbp, *.VBW),
+   the C source Grafik3d.cpp, the binaries (3D_BAU.EXE, SCREEN.EXE,
+   graf3d32.dll), the scene files (*.pov, *.pov.bak), the images (*.bmp)
+   and START.BAT, carry no license. Every right in them stays with their
+   author, Herbert Kleber. Nothing in this repository grants a license to
+   them, and the license of version 2.0 below does not reach them.
+
+2. Version 2.0 of 2026 by Florian Kleber
+
+   The rewrite in Rust, every file under crates/, service/, web/, tools/,
+   tests/, Documentation/, LICENSES/ and .github/, and the files
+   Cargo.toml, Cargo.lock, rust-toolchain.toml, rustfmt.toml, .gitignore,
+   .gitmodules and this file, is
+
+       Copyright (C) 2026 Florian Kleber
+
+   and licensed under the GNU General Public License version 2 only,
+   SPDX-License-Identifier: GPL-2.0-only. The full text stands in
+   LICENSES/GPL-2.0-only.txt. Every source file of version 2.0 opens with
+   its SPDX line.
+
+   Version 2.0 implements the design described in the diploma thesis
+   "Grundlagen der 3D-Computergrafik" by Herbert Kleber. It contains no
+   code of version 1.3.
+
+3. Aosabi
+
+   The submodule third_party/aosabi is Aosabi, under the terms of its own
+   LICENSE and NOTICE in that folder.
+
+Documentation/licensing.md says how a change checks that every crate a
+build of version 2.0 links is compatible with GPL-2.0-only.
