@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# The geometry of 3D-Bausteine: the bodies, the scene, the four views, the
+# drawing of their edges, the export to POV-Ray and the program of the ray
+# tracer. It names no crate outside the standard library, so the service and
+# the renderer in the browser share it as it stands.
+[package]
+name = "bausteine-core"
+description = "The geometry of 3D-Bausteine, shared by the service and the renderer."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
