@@ -1,0 +1,2625 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
+/*
+ * 3D-Bausteine classic.css: the classic look of version 1.3, the Windows 98
+ * appearance of 3D-Baukasten 1.3 by Herbert Kleber from 2002, which the user
+ * calls vaporwave. The page always loads this stylesheet next to style.css,
+ * and every rule here is scoped under html[data-look="classic"], so the
+ * modern look stays untouched and the theme switch data-theme has no effect
+ * in this look.
+ *
+ * The windows of version 1.3 float over a teal desktop that has the size of
+ * the virtual screen. The script writes that size as --screen-w and
+ * --screen-h on the root element, and the default places of Form_Set are
+ * computed from it with calc(). A window the user drags gets inline left,
+ * top, width and height, which win over these defaults. The four views are
+ * placed by the script as well. The stylesheet only gives them their
+ * sunken edge.
+ *
+ * Every control inside a window sits at the pixel place of the .frm files
+ * of version 1.3, where 15 twips make one pixel. Controls directly on a tab
+ * page of the register form F4 use the coordinates of the F4 client, which
+ * are those of the SSTab, because the tab pages are not positioned and the
+ * SSTab is their containing block. Controls inside a Frame use coordinates
+ * relative to that Frame, which is the F4 coordinate minus the place of the
+ * Frame. The comments name the original numbers where they differ.
+ *
+ * The item numbers C-010 and following refer to the plan of the classic
+ * look. The bevels are inset box shadows, so no border changes the layout.
+ * The small pictures (arrows, check marks, caption glyphs, the dither) are
+ * pixel exact SVG drawings in the sixteen colours of the VGA palette.
+ */
+
+/*
+ * 1. Colour tokens, fonts and pictures (C-010 to C-040).
+ */
+
+html[data-look="classic"] {
+  --screen-w: 1024px;
+  --screen-h: 768px;
+
+  --c-face: #c0c0c0;
+  --c-shadow: #808080;
+  --c-light: #dfdfdf;
+  --c-hilight: #ffffff;
+  --c-dkshadow: #000000;
+  --c-caption: #800080;
+  --c-caption-text: #ffffff;
+  --c-caption-inactive: #808080;
+  --c-caption-inactive-text: #c0c0c0;
+  --c-frame-light: #e0e0e0;
+  --c-geo: #008080;
+  --c-geo-13: #00c0c0;
+  --c-magenta: #ff00ff;
+  --c-lcd: #000000;
+  --c-lcd-x: #ff0000;
+  --c-lcd-y: #ffff00;
+  --c-lcd-z: #00ff00;
+  --c-blue: #0000c0;
+  --c-blue-text: #ffffff;
+  --c-view: #000000;
+  --c-raster: #ffffff;
+  --c-mark-green: #00ff00;
+  --c-mark-yellow: #ffff00;
+  --c-mark-red: #ff0000;
+  --c-tooltip: #ffffe1;
+  --c-tooltip-text: #000000;
+  --c-desktop: #008080;
+  --c-lx: #120000;
+  --c-menu-hilite: #800080;
+
+  --vga-black: #000000;
+  --vga-maroon: #800000;
+  --vga-green: #008000;
+  --vga-olive: #808000;
+  --vga-navy: #000080;
+  --vga-purple: #800080;
+  --vga-teal: #008080;
+  --vga-silver: #c0c0c0;
+  --vga-gray: #808080;
+  --vga-dkgray: #808080;
+  --vga-red: #ff0000;
+  --vga-lime: #00ff00;
+  --vga-yellow: #ffff00;
+  --vga-blue: #0000ff;
+  --vga-fuchsia: #ff00ff;
+  --vga-aqua: #00ffff;
+  --vga-white: #ffffff;
+
+  --c-font: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, "Segoe UI", Arial, "Liberation Sans", sans-serif;
+  --c-font-splash: Arial, "Liberation Sans", Helvetica, sans-serif;
+
+  /* The bevels of C-050 to C-059. */
+  --c-bevel-raised: inset -1px -1px #000, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+  --c-bevel-pressed: inset 1px 1px #000, inset -1px -1px #fff, inset 2px 2px #808080, inset -2px -2px #dfdfdf;
+  --c-bevel-sunken: inset 1px 1px #808080, inset -1px -1px #fff, inset 2px 2px #000, inset -2px -2px #dfdfdf;
+  --c-bevel-window: inset -1px -1px #000, inset 1px 1px #dfdfdf, inset -2px -2px #808080, inset 2px 2px #fff;
+  --c-bevel-etched: inset 1px 1px #808080, inset -1px -1px #fff, inset 2px 2px #fff, inset -2px -2px #808080;
+  --c-bevel-thin: inset 1px 1px #fff, inset -1px -1px #808080;
+  --c-bevel-well: inset 1px 1px #808080, inset -1px -1px #fff;
+
+  --c-img-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h7v1H0zM1 1h5v1H1zM2 2h3v1H2zM3 3h1v1H3z'/%3E%3C/svg%3E");
+  --c-img-arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M3 0h1v1H3zM2 1h3v1H2zM1 2h5v1H1zM0 3h7v1H0z'/%3E%3C/svg%3E");
+  --c-img-arrow-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M3 0h1v1H3zM2 1h2v1H2zM1 2h3v1H1zM0 3h4v1H0zM1 4h3v1H1zM2 5h2v1H2zM3 6h1v1H3z'/%3E%3C/svg%3E");
+  --c-img-arrow-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h1v1H0zM0 1h2v1H0zM0 2h3v1H0zM0 3h4v1H0zM0 4h3v1H0zM0 5h2v1H0zM0 6h1v1H0z'/%3E%3C/svg%3E");
+  --c-img-btn-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='17' shape-rendering='crispEdges'%3E%3Crect width='16' height='17' fill='%23000'/%3E%3Crect width='15' height='16' fill='%23fff'/%3E%3Crect x='1' y='1' width='14' height='15' fill='%23808080'/%3E%3Crect x='1' y='1' width='13' height='14' fill='%23dfdfdf'/%3E%3Crect x='2' y='2' width='12' height='13' fill='%23c0c0c0'/%3E%3Cpath d='M4 7h7v1H4zM5 8h5v1H5zM6 9h3v1H6zM7 10h1v1H7z'/%3E%3C/svg%3E");
+  --c-img-btn-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='17' shape-rendering='crispEdges'%3E%3Crect width='16' height='17' fill='%23000'/%3E%3Crect width='15' height='16' fill='%23fff'/%3E%3Crect x='1' y='1' width='14' height='15' fill='%23808080'/%3E%3Crect x='1' y='1' width='13' height='14' fill='%23dfdfdf'/%3E%3Crect x='2' y='2' width='12' height='13' fill='%23c0c0c0'/%3E%3Cpath d='M9 5h1v1H9zM8 6h2v1H8zM7 7h3v1H7zM6 8h4v1H6zM7 9h3v1H7zM8 10h2v1H8zM9 11h1v1H9z'/%3E%3C/svg%3E");
+  --c-img-btn-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='17' shape-rendering='crispEdges'%3E%3Crect width='16' height='17' fill='%23000'/%3E%3Crect width='15' height='16' fill='%23fff'/%3E%3Crect x='1' y='1' width='14' height='15' fill='%23808080'/%3E%3Crect x='1' y='1' width='13' height='14' fill='%23dfdfdf'/%3E%3Crect x='2' y='2' width='12' height='13' fill='%23c0c0c0'/%3E%3Cpath d='M6 5h1v1H6zM6 6h2v1H6zM6 7h3v1H6zM6 8h4v1H6zM6 9h3v1H6zM6 10h2v1H6zM6 11h1v1H6z'/%3E%3C/svg%3E");
+  --c-img-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M6 0h1v1H6zM5 1h2v1H5zM0 2h1v1H0zM4 2h3v1H4zM0 3h2v1H0zM3 3h3v1H3zM0 4h5v1H0zM1 5h3v1H1zM2 6h1v1H2z'/%3E%3C/svg%3E");
+  --c-img-dot: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M1 0h4v1H1zM0 1h6v1H0zM0 2h6v1H0zM0 3h6v1H0zM0 4h6v1H0zM1 5h4v1H1z'/%3E%3C/svg%3E");
+  --c-img-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h2v1H0zM6 0h2v1H6zM1 1h2v1H1zM5 1h2v1H5zM2 2h4v1H2zM3 3h2v1H3zM2 4h4v1H2zM1 5h2v1H1zM5 5h2v1H5zM0 6h2v1H0zM6 6h2v1H6z'/%3E%3C/svg%3E");
+  --c-img-close-s: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='5' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h2v1H0zM4 0h2v1H4zM1 1h4v1H1zM2 2h2v1H2zM1 3h4v1H1zM0 4h2v1H0zM4 4h2v1H4z'/%3E%3C/svg%3E");
+  --c-img-min: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 5h6v1H0zM0 6h6v1H0z'/%3E%3C/svg%3E");
+  --c-img-max: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h9v1H0zM0 1h9v1H0zM0 2h1v1H0zM8 2h1v1H8zM0 3h1v1H0zM8 3h1v1H8zM0 4h1v1H0zM8 4h1v1H8zM0 5h1v1H0zM8 5h1v1H8zM0 6h1v1H0zM8 6h1v1H8zM0 7h1v1H0zM8 7h1v1H8zM0 8h9v1H0z'/%3E%3C/svg%3E");
+  --c-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='9' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M1 0h4v1H1zM0 1h2v1H0zM4 1h2v1H4zM4 2h2v1H4zM3 3h2v1H3zM2 4h2v1H2zM2 5h2v1H2zM2 7h2v1H2zM2 8h2v1H2z'/%3E%3C/svg%3E");
+  --c-img-radio: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath fill='%23808080' d='M4 0h4v1H4zM2 1h2v1H2zM8 1h2v1H8zM1 2h1v1H1zM1 3h1v1H1zM0 4h1v1H0zM0 5h1v1H0zM0 6h1v1H0zM0 7h1v1H0zM1 8h1v1H1zM1 9h1v1H1z'/%3E%3Cpath fill='%23fff' d='M4 2h4v1H4zM10 2h1v1H10zM3 3h6v1H3zM10 3h1v1H10zM2 4h8v1H2zM11 4h1v1H11zM2 5h8v1H2zM11 5h1v1H11zM2 6h8v1H2zM11 6h1v1H11zM2 7h8v1H2zM11 7h1v1H11zM3 8h6v1H3zM10 8h1v1H10zM4 9h4v1H4zM10 9h1v1H10zM2 10h2v1H2zM8 10h2v1H8zM4 11h4v1H4z'/%3E%3Cpath fill='%23000' d='M4 1h4v1H4zM2 2h2v1H2zM8 2h1v1H8zM2 3h1v1H2zM1 4h1v1H1zM1 5h1v1H1zM1 6h1v1H1zM1 7h1v1H1zM2 8h1v1H2z'/%3E%3Cpath fill='%23dfdfdf' d='M9 2h1v1H9zM9 3h1v1H9zM10 4h1v1H10zM10 5h1v1H10zM10 6h1v1H10zM10 7h1v1H10zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z'/%3E%3C/svg%3E");
+  --c-img-radio-on: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath fill='%23808080' d='M4 0h4v1H4zM2 1h2v1H2zM8 1h2v1H8zM1 2h1v1H1zM1 3h1v1H1zM0 4h1v1H0zM0 5h1v1H0zM0 6h1v1H0zM0 7h1v1H0zM1 8h1v1H1zM1 9h1v1H1z'/%3E%3Cpath fill='%23fff' d='M4 2h4v1H4zM10 2h1v1H10zM3 3h6v1H3zM10 3h1v1H10zM2 4h3v1H2zM7 4h3v1H7zM11 4h1v1H11zM2 5h2v1H2zM8 5h2v1H8zM11 5h1v1H11zM2 6h2v1H2zM8 6h2v1H8zM11 6h1v1H11zM2 7h3v1H2zM7 7h3v1H7zM11 7h1v1H11zM3 8h6v1H3zM10 8h1v1H10zM4 9h4v1H4zM10 9h1v1H10zM2 10h2v1H2zM8 10h2v1H8zM4 11h4v1H4z'/%3E%3Cpath fill='%23000' d='M4 1h4v1H4zM2 2h2v1H2zM8 2h1v1H8zM2 3h1v1H2zM1 4h1v1H1zM5 4h2v1H5zM1 5h1v1H1zM4 5h4v1H4zM1 6h1v1H1zM4 6h4v1H4zM1 7h1v1H1zM5 7h2v1H5zM2 8h1v1H2z'/%3E%3Cpath fill='%23dfdfdf' d='M9 2h1v1H9zM9 3h1v1H9zM10 4h1v1H10zM10 5h1v1H10zM10 6h1v1H10zM10 7h1v1H10zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z'/%3E%3C/svg%3E");
+  --c-img-dither: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M0 0h1v1H0zM1 1h1v1H1z'/%3E%3Cpath fill='%23c0c0c0' d='M1 0h1v1H1zM0 1h1v1H0z'/%3E%3C/svg%3E");
+  --c-img-sunken: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='5' shape-rendering='crispEdges'%3E%3Cpath fill='%23808080' d='M0 0h4v1H0zM0 1h1v1H0zM0 2h1v1H0zM0 3h1v1H0z'/%3E%3Cpath fill='%23000' d='M1 1h2v1H1zM1 2h1v1H1z'/%3E%3Cpath fill='%23dfdfdf' d='M3 1h1v1H3zM3 2h1v1H3zM1 3h3v1H1z'/%3E%3Cpath fill='%23fff' d='M4 0h1v1H4zM4 1h1v1H4zM2 2h1v1H2zM4 2h1v1H4zM4 3h1v1H4zM0 4h5v1H0z'/%3E%3C/svg%3E");
+  --c-img-critical: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23800000'/%3E%3Ccircle cx='16' cy='16' r='14' fill='%23ff0000'/%3E%3Cpath d='M10 8l6 6 6-6 2 2-6 6 6 6-2 2-6-6-6 6-2-2 6-6-6-6z' fill='%23fff'/%3E%3C/svg%3E");
+
+  color-scheme: light;
+  overflow: auto;
+  height: auto;
+  background: var(--c-desktop);
+}
+
+/*
+ * 2. The page, the desktop and the resets (C-070, C-180, C-189 to C-191).
+ */
+
+html[data-look="classic"] *,
+html[data-look="classic"] *::before,
+html[data-look="classic"] *::after {
+  box-sizing: border-box;
+  border-radius: 0 !important;
+  transition: none !important;
+  text-transform: none !important;
+  letter-spacing: normal;
+  backdrop-filter: none;
+}
+
+html[data-look="classic"] [hidden] {
+  display: none !important;
+}
+
+/* The modern look decorates many elements with pseudo elements (accent
+   bars, separators, masks, a progress bar). The classic look removes all
+   of them and marks its own pseudo elements as important, which wins
+   by their higher specificity. */
+html[data-look="classic"] *::before,
+html[data-look="classic"] *::after {
+  content: none !important;
+}
+
+/* Elements of the modern look that the classic look does not show. */
+html[data-look="classic"] .modern-only,
+html[data-look="classic"] .view-head,
+html[data-look="classic"] .surface-swatch,
+html[data-look="classic"] #farben-picker,
+html[data-look="classic"] .modern-row,
+html[data-look="classic"] .row-icon,
+html[data-look="classic"] #t-incl,
+html[data-look="classic"] #cmdia-file {
+  display: none !important;
+}
+
+/* The classic look reports in the status field of F5, not in a toast. */
+html[data-look="classic"] .toast,
+html[data-look="classic"] #toast {
+  display: none !important;
+}
+
+html[data-look="classic"] body {
+  position: relative;
+  display: block;
+  min-width: 800px;
+  min-height: 600px;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  background: var(--c-desktop);
+  color: #000;
+  font: 11px/13px var(--c-font);
+  font-weight: 400;
+  cursor: default;
+}
+
+html[data-look="classic"] #desktop {
+  position: relative;
+  display: block;
+  width: var(--screen-w);
+  height: var(--screen-h);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--c-desktop);
+}
+
+/* The docks of the modern look dissolve, so every window is placed
+   relative to the desktop. */
+html[data-look="classic"] .dock {
+  display: contents;
+}
+
+html[data-look="classic"] button,
+html[data-look="classic"] input,
+html[data-look="classic"] select,
+html[data-look="classic"] textarea,
+html[data-look="classic"] output {
+  font: 11px/13px var(--c-font);
+  letter-spacing: normal;
+  color: #000;
+}
+
+html[data-look="classic"] :focus,
+html[data-look="classic"] :focus-visible {
+  outline: none;
+}
+
+html[data-look="classic"] ::selection {
+  background: var(--c-caption);
+  color: #fff;
+}
+
+/* A caption of version 1.3 replaces the modern one: Command1, Command2,
+   Frame6 and the caption 3D of F2. */
+html[data-look="classic"] [data-classic-caption] {
+  font-size: 0 !important;
+}
+
+html[data-look="classic"] [data-classic-caption]::after {
+  content: attr(data-classic-caption) !important;
+  font-size: 11px;
+}
+
+/*
+ * 3. Scroll bars (C-182). Chromium and WebKit draw the Windows 98 bar.
+ * Firefox can only colour its own bar, which is a limitation of the
+ * browser. The webkit pseudo elements only apply while scrollbar-color and
+ * scrollbar-width stay auto, so the reset below keeps them auto.
+ */
+
+html[data-look="classic"] * {
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  html[data-look="classic"] * {
+    scrollbar-color: #c0c0c0 #e8e8e8;
+  }
+}
+
+html[data-look="classic"] ::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+  background: var(--c-img-dither);
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-track {
+  background: var(--c-img-dither);
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-thumb {
+  min-width: 8px;
+  min-height: 8px;
+  border: 0;
+  background: var(--c-face);
+  box-shadow: var(--c-bevel-window);
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-corner {
+  background: var(--c-face);
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-button:single-button {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background-color: var(--c-face);
+  background-repeat: no-repeat;
+  box-shadow: var(--c-bevel-window);
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image: var(--c-img-arrow-up);
+  background-position: 4px 6px;
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: var(--c-img-arrow-down);
+  background-position: 4px 6px;
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-button:single-button:horizontal:decrement {
+  background-image: var(--c-img-arrow-left);
+  background-position: 6px 4px;
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-button:single-button:horizontal:increment {
+  background-image: var(--c-img-arrow-right);
+  background-position: 6px 4px;
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-button:single-button:active {
+  box-shadow: inset 0 0 0 1px #808080;
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-button:single-button:vertical:active {
+  background-position: 5px 7px;
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-button:single-button:horizontal:active {
+  background-position: 7px 5px;
+}
+
+html[data-look="classic"] ::-webkit-scrollbar-button:double-button {
+  display: none;
+}
+
+/*
+ * 4. Bevel utilities (C-050 to C-060).
+ */
+
+html[data-look="classic"] .c-raised {
+  background-color: var(--c-face);
+  box-shadow: var(--c-bevel-raised);
+}
+
+html[data-look="classic"] .c-sunken {
+  background-color: #fff;
+  box-shadow: var(--c-bevel-sunken);
+}
+
+html[data-look="classic"] .c-raised-thin {
+  box-shadow: var(--c-bevel-thin);
+}
+
+html[data-look="classic"] .c-etched-v {
+  width: 0;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+}
+
+/*
+ * 5. Controls shared by all windows (C-180 to C-188).
+ */
+
+/* CommandButton (C-180). The text moves by one pixel while pressed. The
+   side padding is small because the fallback fonts run wider than MS Sans
+   Serif, and a caption such as Command1 must still fit its 65 pixels. */
+html[data-look="classic"] .c-button {
+  display: inline-block;
+  vertical-align: middle;
+  min-width: 0;
+  min-height: 23px;
+  margin: 0;
+  padding: 1px 2px;
+  border: 0;
+  background: var(--c-face);
+  color: #000;
+  font: 11px/13px var(--c-font);
+  font-weight: 400;
+  text-align: center;
+  text-decoration: none;
+  text-shadow: none;
+  white-space: nowrap;
+  text-overflow: clip;
+  overflow: hidden;
+  box-shadow: var(--c-bevel-raised);
+  cursor: default;
+  appearance: none;
+}
+
+html[data-look="classic"] .c-button:hover {
+  background: var(--c-face);
+  color: #000;
+}
+
+html[data-look="classic"] .c-button:active:not(:disabled) {
+  padding: 2px 1px 0 3px;
+  box-shadow: var(--c-bevel-pressed);
+}
+
+html[data-look="classic"] .c-button:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: -4px;
+}
+
+html[data-look="classic"] .c-button:disabled,
+html[data-look="classic"] .c-button[aria-disabled="true"] {
+  color: #808080;
+  text-shadow: 1px 1px #fff;
+}
+
+/* The default button of a dialog has a black ring around it (C-053). */
+html[data-look="classic"] .c-button.c-default {
+  box-shadow: var(--c-bevel-raised), 0 0 0 1px #000;
+}
+
+html[data-look="classic"] .c-button.c-default:active:not(:disabled) {
+  box-shadow: inset 0 0 0 1px #808080, 0 0 0 1px #000;
+}
+
+/* The small buttons of F5 and F9. */
+html[data-look="classic"] .c-button.c-mini {
+  width: 17px;
+  height: 17px;
+  min-height: 0;
+  padding: 0 1px 1px 0;
+  line-height: 13px;
+}
+
+html[data-look="classic"] .c-button.c-mini:active:not(:disabled) {
+  padding: 1px 0 0 1px;
+}
+
+/* TextBox (C-181). Single line inputs centre their text vertically. */
+html[data-look="classic"] .c-text {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 3px 2px 4px;
+  border: 0;
+  background: #fff;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  font-weight: 400;
+  text-align: left;
+  box-shadow: var(--c-bevel-sunken);
+  caret-color: currentColor;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: text;
+}
+
+html[data-look="classic"] .c-text:disabled {
+  background: var(--c-face);
+  color: #808080;
+  -webkit-text-fill-color: #808080;
+  opacity: 1;
+}
+
+html[data-look="classic"] .c-text.c-lcd {
+  background: var(--c-lcd);
+  color: var(--c-lcd-y);
+  font-weight: 700;
+}
+
+html[data-look="classic"] .c-text.c-lcd.free {
+  color: var(--c-lcd-y);
+}
+
+html[data-look="classic"] .c-text.c-lcd.locked {
+  color: var(--c-lcd-z);
+}
+
+html[data-look="classic"] .c-text.c-lcd.rot {
+  color: var(--c-lcd-x);
+}
+
+html[data-look="classic"] .c-text.c-lcd:disabled {
+  background: var(--c-lcd);
+  color: #808080;
+  -webkit-text-fill-color: #808080;
+}
+
+html[data-look="classic"] .c-text.c-blue {
+  background: var(--c-blue);
+  color: var(--c-blue-text);
+}
+
+/* The multi line TextBox draws its edge as a border, so the scroll bars sit
+   inside the sunken edge as in Windows 98. */
+html[data-look="classic"] .c-text.c-multiline,
+html[data-look="classic"] textarea.c-text {
+  padding: 1px 2px;
+  border: 2px solid #808080;
+  border-image: var(--c-img-sunken) 2 / 2px stretch;
+  box-shadow: none;
+  white-space: pre;
+  overflow: scroll;
+  resize: none;
+  line-height: 13px;
+}
+
+html[data-look="classic"] input[type="number"].c-text {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+html[data-look="classic"] input[type="number"]::-webkit-inner-spin-button,
+html[data-look="classic"] input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* The password box stays a plain sunken box (C-156). */
+html[data-look="classic"] input[type="password"] {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* ListBox and FileListBox (C-131, C-185). */
+html[data-look="classic"] .c-list {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 2px solid #808080;
+  border-image: var(--c-img-sunken) 2 / 2px stretch;
+  background: #fff;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  list-style: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-shadow: none;
+  outline: none;
+  cursor: default;
+}
+
+html[data-look="classic"] .c-list > * {
+  display: block;
+  height: 13px;
+  margin: 0;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  line-height: 13px;
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: clip;
+  cursor: default;
+}
+
+html[data-look="classic"] .c-list > :hover {
+  background: none;
+  color: inherit;
+}
+
+html[data-look="classic"] .c-list > [aria-selected="true"],
+html[data-look="classic"] .c-list > .selected {
+  background: var(--c-caption);
+  color: #fff;
+}
+
+html[data-look="classic"] .c-list:focus-visible > [aria-selected="true"] {
+  outline: 1px dotted #fff;
+  outline-offset: -1px;
+}
+
+html[data-look="classic"] .c-list svg,
+html[data-look="classic"] .c-list img,
+html[data-look="classic"] .c-list .swatch,
+html[data-look="classic"] .c-list .texture-tag {
+  display: none;
+}
+
+/* ComboBox (C-184): a sunken white edit with a raised arrow button flush at
+   the right inside the edge, and the open list below it. */
+html[data-look="classic"] .c-combo {
+  position: relative;
+  display: block;
+  height: 21px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #fff;
+  box-shadow: var(--c-bevel-sunken);
+}
+
+html[data-look="classic"] .c-combo-edit {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  right: 18px;
+  bottom: 2px;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  font-weight: inherit;
+  box-shadow: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+html[data-look="classic"] .c-combo-edit::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+
+html[data-look="classic"] .c-combo-arrow {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 17px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--c-face) var(--c-img-arrow-down) no-repeat 4px 7px;
+  box-shadow: var(--c-bevel-window);
+  cursor: default;
+}
+
+html[data-look="classic"] .c-combo-arrow:active {
+  background-position: 5px 8px;
+  box-shadow: inset 0 0 0 1px #808080;
+}
+
+html[data-look="classic"] .c-combo-arrow > * {
+  display: none;
+}
+
+html[data-look="classic"] .c-combo-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 60;
+  display: block;
+  max-height: 106px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #000;
+  background: #fff;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  font-weight: 400;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-shadow: none;
+}
+
+html[data-look="classic"] .c-combo-list > * {
+  display: block;
+  height: 13px;
+  padding: 0 2px;
+  line-height: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: default;
+}
+
+html[data-look="classic"] .c-combo-list > :hover,
+html[data-look="classic"] .c-combo-list > [aria-selected="true"] {
+  background: var(--c-caption);
+  color: #fff;
+}
+
+/* A native select drawn as the dropdown list of C-184. The arrow button is
+   a picture inside the sunken edge, and the focused field highlights its
+   text area purple as CB3 does in readme-8. */
+html[data-look="classic"] select {
+  display: block;
+  height: 21px;
+  margin: 0;
+  padding: 0 20px 0 4px;
+  border: 0;
+  background: var(--c-img-btn-down) no-repeat right 2px top 2px / 16px 17px, #fff;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  box-shadow: var(--c-bevel-sunken);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
+  cursor: default;
+}
+
+html[data-look="classic"] select:focus {
+  background:
+    var(--c-img-btn-down) no-repeat right 2px top 2px / 16px 17px,
+    linear-gradient(var(--c-caption), var(--c-caption)) no-repeat 3px 3px / calc(100% - 22px) calc(100% - 6px),
+    #fff;
+  color: #fff;
+}
+
+html[data-look="classic"] select:disabled {
+  background: var(--c-img-btn-down) no-repeat right 2px top 2px / 16px 17px, var(--c-face);
+  color: #808080;
+}
+
+html[data-look="classic"] select option {
+  background: #fff;
+  color: #000;
+}
+
+/* HScrollBar (C-183) over an input of type range. The two arrow buttons are
+   pictures in the padding at both ends and the thumb moves between them.
+   CSS cannot make the arrow ends step by SmallChange, so a click on them
+   acts like a click on the track end. The script may map a click within
+   16 pixels of either end to one step. */
+html[data-look="classic"] input[type="range"],
+html[data-look="classic"] .c-hscroll {
+  display: block;
+  height: 17px;
+  margin: 0;
+  padding: 0 16px;
+  border: 0;
+  background:
+    var(--c-img-btn-left) no-repeat left top / 16px 17px,
+    var(--c-img-btn-right) no-repeat right top / 16px 17px,
+    var(--c-img-dither) repeat;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  cursor: default;
+  accent-color: auto;
+}
+
+html[data-look="classic"] input[type="range"]::-webkit-slider-runnable-track {
+  height: 17px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-look="classic"] input[type="range"]::-webkit-slider-thumb {
+  width: 8px;
+  height: 17px;
+  margin-top: 0;
+  border: 0;
+  background: var(--c-face);
+  box-shadow: var(--c-bevel-window);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: default;
+}
+
+html[data-look="classic"] input[type="range"]::-moz-range-track {
+  height: 17px;
+  border: 0;
+  background: transparent;
+}
+
+html[data-look="classic"] input[type="range"]::-moz-range-progress {
+  background: transparent;
+}
+
+html[data-look="classic"] input[type="range"]::-moz-range-thumb {
+  width: 8px;
+  height: 17px;
+  border: 0;
+  background: var(--c-face);
+  box-shadow: var(--c-bevel-window);
+}
+
+/* Frame (C-055, C-186). Version 1.3 draws the etched line half a text
+   height below the top of the Frame, with or without a caption, and the
+   caption on the line with the background of the Frame behind it. */
+html[data-look="classic"] .c-frame {
+  position: relative;
+  display: block;
+  flex: none;
+  float: none;
+  min-width: 0;
+  min-inline-size: 0;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--c-face);
+  box-shadow: none;
+}
+
+html[data-look="classic"] .c-frame::before {
+  content: "" !important;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6px;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  background: none;
+  box-shadow: var(--c-bevel-etched);
+  pointer-events: none;
+}
+
+html[data-look="classic"] .c-frame > legend {
+  position: absolute;
+  top: 0;
+  left: 6px;
+  z-index: 1;
+  float: none;
+  width: auto;
+  height: 13px;
+  margin: 0;
+  padding: 0 2px;
+  border: 0;
+  background: inherit;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  font-weight: 400;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Label (C-186): transparent, one line, clipped at its width. */
+html[data-look="classic"] .c-label {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+/* CheckBox and OptionButton of the Windows 98 dialogs. */
+html[data-look="classic"] input[type="checkbox"] {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  margin: 0 5px 0 0;
+  padding: 0;
+  border: 0;
+  background: #fff no-repeat 3px 3px;
+  box-shadow: var(--c-bevel-sunken);
+  vertical-align: -2px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+html[data-look="classic"] input[type="checkbox"]:checked {
+  background-image: var(--c-img-check);
+}
+
+html[data-look="classic"] input[type="checkbox"]:disabled {
+  background-color: var(--c-face);
+}
+
+html[data-look="classic"] input[type="radio"] {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin: 0 5px 0 0;
+  padding: 0;
+  border: 0;
+  background: var(--c-img-radio) no-repeat;
+  box-shadow: none;
+  vertical-align: -2px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+html[data-look="classic"] input[type="radio"]:checked {
+  background-image: var(--c-img-radio-on);
+}
+
+html[data-look="classic"] input[type="checkbox"]:focus-visible,
+html[data-look="classic"] input[type="radio"]:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: 1px;
+}
+
+/* ToolTip (C-115), placed by the script. */
+html[data-look="classic"] .c-tooltip {
+  position: fixed;
+  z-index: 500;
+  max-width: none;
+  margin: 0;
+  padding: 1px 3px;
+  border: 1px solid #000;
+  background: var(--c-tooltip);
+  color: var(--c-tooltip-text);
+  font: 11px/13px var(--c-font);
+  white-space: nowrap;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/*
+ * 6. Windows (C-080 to C-092). Every floating window has the Windows 98
+ * edge with four pixels of frame, a caption bar and a client. The script
+ * raises the window clicked last and marks it active.
+ */
+
+html[data-look="classic"] .c-win {
+  position: absolute;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 4px;
+  border: 0;
+  background: var(--c-face);
+  color: #000;
+  box-shadow: var(--c-bevel-window);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html[data-look="classic"] .c-win > .win-title {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 18px;
+  margin: 0 0 1px;
+  padding: 0 2px 0 3px;
+  border: 0;
+  background: var(--c-caption-inactive);
+  color: var(--c-caption-inactive-text);
+  font: 700 11px/13px var(--c-font);
+  white-space: nowrap;
+  overflow: hidden;
+  box-shadow: none;
+  cursor: default;
+}
+
+html[data-look="classic"] .c-win.active > .win-title,
+html[data-look="classic"] dialog.c-win > .win-title {
+  background: var(--c-caption);
+  color: var(--c-caption-text);
+}
+
+/* While a dialog is open, it holds the purple caption and the windows
+   behind it turn grey, as "Eingaben" does under "Farben" in readme-6. */
+html[data-look="classic"]:has(dialog.c-win[open]) .c-win.active:not(dialog) > .win-title {
+  background: var(--c-caption-inactive);
+  color: var(--c-caption-inactive-text);
+}
+
+/* Tool windows have the small caption: fourteen pixels with a pixel of
+   face above and below (C-081). */
+html[data-look="classic"] .c-win[data-border="tool"] > .win-title {
+  height: 14px;
+  margin: 1px 0;
+  padding-left: 2px;
+}
+
+html[data-look="classic"] .c-win > .win-title > .win-icon {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0 2px 0 -1px;
+  overflow: hidden;
+}
+
+html[data-look="classic"] .c-win > .win-title > .win-icon > svg,
+html[data-look="classic"] .c-win > .win-title > .win-icon > img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  shape-rendering: crispEdges;
+  image-rendering: pixelated;
+}
+
+html[data-look="classic"] .c-win > .win-title > .win-caption {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  color: inherit;
+  font: 700 11px/13px var(--c-font);
+  white-space: nowrap;
+  text-overflow: clip;
+}
+
+html[data-look="classic"] .c-win > .win-title > .win-buttons {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0;
+  margin: 0 0 0 auto;
+  padding: 0;
+}
+
+/* Caption buttons (C-084): 16 by 14 on a normal caption, 13 by 11 on a
+   small one. The script puts the 16 pixel glyph of icons-classic.js inside,
+   and an empty button shows the glyph of this stylesheet instead. */
+html[data-look="classic"] .win-buttons > button {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--c-face) no-repeat;
+  color: #000;
+  box-shadow: var(--c-bevel-window);
+  overflow: hidden;
+  cursor: default;
+}
+
+html[data-look="classic"] .win-buttons > button > svg {
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 16px;
+  height: 16px;
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+
+html[data-look="classic"] .win-buttons > button:active {
+  box-shadow: var(--c-bevel-pressed);
+}
+
+html[data-look="classic"] .win-buttons > button:active > svg {
+  left: 1px;
+  top: 0;
+}
+
+/* Two pixels part the cross from the buttons left of it (C-084). */
+html[data-look="classic"] .win-buttons > .win-close {
+  margin-left: 2px;
+}
+
+html[data-look="classic"] .win-buttons > .win-close:first-child {
+  margin-left: 0;
+}
+
+html[data-look="classic"] .win-buttons > .win-close:empty {
+  background-image: var(--c-img-close);
+  background-position: 4px 3px;
+}
+
+html[data-look="classic"] .win-buttons > .win-min:empty {
+  background-image: var(--c-img-min);
+  background-position: 4px 3px;
+}
+
+html[data-look="classic"] .win-buttons > .win-max:empty {
+  background-image: var(--c-img-max);
+  background-position: 3px 2px;
+}
+
+html[data-look="classic"] .win-buttons > .win-help:empty {
+  background-image: var(--c-img-help);
+  background-position: 5px 2px;
+}
+
+html[data-look="classic"] .win-buttons > .win-close:empty:active {
+  background-position: 5px 4px;
+}
+
+html[data-look="classic"] .win-buttons > .win-min:empty:active {
+  background-position: 5px 4px;
+}
+
+html[data-look="classic"] .win-buttons > .win-max:empty:active {
+  background-position: 4px 3px;
+}
+
+html[data-look="classic"] .win-buttons > .win-help:empty:active {
+  background-position: 6px 3px;
+}
+
+/* The small caption button of a tool window draws the small cross of
+   Windows 98, six by five pixels, which the 16 pixel glyph cannot give. */
+html[data-look="classic"] .c-win[data-border="tool"] .win-buttons > button {
+  width: 13px;
+  height: 11px;
+  margin-left: 0;
+  background-image: var(--c-img-close-s);
+  background-position: 3px 3px;
+}
+
+html[data-look="classic"] .c-win[data-border="tool"] .win-buttons > button:active {
+  background-position: 4px 4px;
+}
+
+html[data-look="classic"] .c-win[data-border="tool"] .win-buttons > button > svg {
+  display: none;
+}
+
+html[data-look="classic"] .c-win > .win-client {
+  position: relative;
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--c-face);
+  overflow: hidden;
+  box-shadow: none;
+}
+
+/* Sizing edges, if the script adds them (C-080). */
+html[data-look="classic"] .win-edge {
+  position: absolute;
+  z-index: 5;
+}
+
+html[data-look="classic"] .win-edge[data-edge="n"] { left: 4px; right: 4px; top: 0; height: 4px; cursor: ns-resize; }
+html[data-look="classic"] .win-edge[data-edge="s"] { left: 4px; right: 4px; bottom: 0; height: 4px; cursor: ns-resize; }
+html[data-look="classic"] .win-edge[data-edge="w"] { top: 4px; bottom: 4px; left: 0; width: 4px; cursor: ew-resize; }
+html[data-look="classic"] .win-edge[data-edge="e"] { top: 4px; bottom: 4px; right: 0; width: 4px; cursor: ew-resize; }
+html[data-look="classic"] .win-edge[data-edge="nw"] { left: 0; top: 0; width: 4px; height: 4px; cursor: nwse-resize; }
+html[data-look="classic"] .win-edge[data-edge="se"] { right: 0; bottom: 0; width: 4px; height: 4px; cursor: nwse-resize; }
+html[data-look="classic"] .win-edge[data-edge="ne"] { right: 0; top: 0; width: 4px; height: 4px; cursor: nesw-resize; }
+html[data-look="classic"] .win-edge[data-edge="sw"] { left: 0; bottom: 0; width: 4px; height: 4px; cursor: nesw-resize; }
+
+/* The places of Form_Set (C-072). F5 lies above Form1 for the overlap of
+   seven pixels (C-073). F2 and F3 stay above all other windows (C-087). */
+html[data-look="classic"] #form1 {
+  left: 48px;
+  top: 0;
+  width: calc(var(--screen-w) - 300px);
+  height: calc(var(--screen-h) - 50px);
+  z-index: 100;
+}
+
+html[data-look="classic"] #f3 {
+  left: 0;
+  top: 0;
+  width: 48px;
+  height: 500px;
+  z-index: 301;
+}
+
+html[data-look="classic"] #f2 {
+  left: 0;
+  top: 500px;
+  width: 48px;
+  height: calc(var(--screen-h) - 527px);
+  z-index: 300;
+}
+
+html[data-look="classic"] #f4 {
+  left: calc(var(--screen-w) - 252px);
+  top: 0;
+  width: 252px;
+  height: 580px;
+  z-index: 102;
+}
+
+html[data-look="classic"] #f6 {
+  left: calc(var(--screen-w) - 252px);
+  top: 580px;
+  width: 252px;
+  height: 200px;
+  z-index: 103;
+}
+
+html[data-look="classic"] #f5 {
+  left: 48px;
+  top: calc(var(--screen-h) - 57px);
+  width: calc(var(--screen-w) - 300px);
+  height: 35px;
+  z-index: 104;
+}
+
+/* The Dia-Show unloads F2 and F3 while it shows (forms 6.3). */
+html[data-look="classic"].diashow #f2,
+html[data-look="classic"].diashow #f3 {
+  visibility: hidden;
+}
+
+/*
+ * 7. Form1: the menu bar and the four views (C-100 to C-109).
+ */
+
+html[data-look="classic"] #form1 > .menubar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  height: 19px;
+  margin: 0 0 1px;
+  padding: 0;
+  border: 0;
+  background: var(--c-face);
+  box-shadow: none;
+}
+
+html[data-look="classic"] .menubar .menu-item {
+  position: relative;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+html[data-look="classic"] .menubar .menu-title {
+  display: block;
+  height: 19px;
+  margin: 0;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: #000;
+  font: 11px/19px var(--c-font);
+  font-weight: 400;
+  white-space: nowrap;
+  box-shadow: none;
+  cursor: default;
+}
+
+html[data-look="classic"] .menubar .menu-title:hover {
+  background: transparent;
+  color: #000;
+}
+
+html[data-look="classic"] .menubar .menu-title[aria-expanded="true"],
+html[data-look="classic"] .menubar .menu-item.open > .menu-title,
+html[data-look="classic"] .menubar .menu-title:focus-visible {
+  background: var(--c-menu-hilite);
+  color: #fff;
+}
+
+html[data-look="classic"] .menubar u {
+  text-decoration: underline;
+  text-underline-offset: 1px;
+}
+
+html[data-look="classic"] .menubar .menu-popup {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  margin: 0;
+  padding: 2px;
+  border: 0;
+  background: var(--c-face);
+  color: #000;
+  box-shadow: var(--c-bevel-window);
+}
+
+html[data-look="classic"] .menubar .menu-entry {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  height: 17px;
+  margin: 0;
+  padding: 0 16px 0 24px;
+  border: 0;
+  background: transparent;
+  color: #000;
+  font: 11px/17px var(--c-font);
+  font-weight: 400;
+  text-align: left;
+  white-space: nowrap;
+  box-shadow: none;
+  cursor: default;
+}
+
+html[data-look="classic"] .menubar .menu-entry:hover,
+html[data-look="classic"] .menubar .menu-entry:focus-visible,
+html[data-look="classic"] .menubar .menu-entry.submenu:focus-within {
+  background: var(--c-menu-hilite);
+  color: #fff;
+}
+
+html[data-look="classic"] .menubar .menu-entry:disabled,
+html[data-look="classic"] .menubar .menu-entry[aria-disabled="true"] {
+  color: #808080;
+  text-shadow: 1px 1px #fff;
+}
+
+html[data-look="classic"] .menubar .menu-entry:disabled:hover,
+html[data-look="classic"] .menubar .menu-entry[aria-disabled="true"]:hover {
+  color: #808080;
+  text-shadow: none;
+}
+
+html[data-look="classic"] .menubar .menu-shortcut {
+  margin-left: auto;
+  color: inherit;
+  font: inherit;
+}
+
+/* Check marks and radio bullets in the gutter of 24 pixels. */
+html[data-look="classic"] .menubar .menu-entry[aria-checked="true"]::before {
+  content: "" !important;
+  position: absolute;
+  left: 8px;
+  top: 5px;
+  width: 7px;
+  height: 7px;
+  background: currentColor;
+  -webkit-mask: var(--c-img-check) no-repeat 0 0 / 7px 7px;
+  mask: var(--c-img-check) no-repeat 0 0 / 7px 7px;
+}
+
+html[data-look="classic"] .menubar .menu-entry[role="menuitemradio"][aria-checked="true"]::before {
+  left: 9px;
+  top: 6px;
+  width: 6px;
+  height: 6px;
+  -webkit-mask: var(--c-img-dot) no-repeat 0 0 / 6px 6px;
+  mask: var(--c-img-dot) no-repeat 0 0 / 6px 6px;
+}
+
+html[data-look="classic"] .menubar .menu-separator {
+  flex: none;
+  height: 0;
+  margin: 3px 1px;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid #808080;
+  border-bottom: 1px solid #fff;
+  background: none;
+}
+
+/* A sub menu opens to the right of its entry. */
+html[data-look="classic"] .menubar .menu-entry.submenu > .submenu-popup {
+  display: none;
+  left: 100%;
+  top: -3px;
+}
+
+html[data-look="classic"] .menubar .menu-entry.submenu:hover > .submenu-popup,
+html[data-look="classic"] .menubar .menu-entry.submenu:focus-within > .submenu-popup,
+html[data-look="classic"] .menubar .menu-entry.submenu[aria-expanded="true"] > .submenu-popup {
+  display: flex;
+}
+
+html[data-look="classic"] .menubar .submenu-popup:empty {
+  min-height: 4px;
+}
+
+/* The client of Form1 holds the canvas and the four views. The canvas lies
+   under the views and is opaque: the renderer paints the black of each
+   view, the white raster and the wire bodies itself. The views above it
+   are transparent and only draw their sunken edge, so nothing opaque
+   covers the drawing. */
+html[data-look="classic"] #form1 > .win-client {
+  background: var(--c-face);
+}
+
+html[data-look="classic"] #views {
+  position: absolute;
+  inset: 0;
+  display: block;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  border: 0;
+  background: var(--c-face);
+  overflow: hidden;
+}
+
+html[data-look="classic"] #canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+/* The views (C-076, C-104). The script sets left, top, width and height.
+   A view is transparent with the two pixel sunken edge as an inset shadow,
+   which paints above the canvas. */
+html[data-look="classic"] #views > .view {
+  position: absolute;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: var(--c-bevel-sunken);
+  transform: none;
+  cursor: default;
+}
+
+html[data-look="classic"] #views > .view > .view-overlay {
+  background: transparent;
+}
+
+html[data-look="classic"] #views > .view.dragging,
+html[data-look="classic"] #views > .view[data-view="3"] {
+  cursor: default;
+}
+
+/* In the zoomed 3D view the oblique view covers the client, so the bevels
+   of the views under it must not show (C-078). */
+html[data-look="classic"] #views.zoomed-d3 > .view:not([data-view="3"]),
+html[data-look="classic"] #views.max-0 > .view:not([data-view="0"]),
+html[data-look="classic"] #views.max-1 > .view:not([data-view="1"]),
+html[data-look="classic"] #views.max-2 > .view:not([data-view="2"]) {
+  visibility: hidden;
+}
+
+/* Marks drawn in the DOM instead of the canvas (C-106). */
+html[data-look="classic"] .mark::before,
+html[data-look="classic"] .mark::after {
+  content: "" !important;
+  background: var(--c-mark-yellow);
+}
+
+html[data-look="classic"] .mark.locked::before,
+html[data-look="classic"] .mark.locked::after {
+  background: var(--c-mark-green);
+}
+
+html[data-look="classic"] .mark.free::before,
+html[data-look="classic"] .mark.free::after {
+  background: var(--c-mark-yellow);
+}
+
+html[data-look="classic"] .mark.selected::before,
+html[data-look="classic"] .mark.selected::after {
+  background: var(--c-mark-red);
+}
+
+/* Without WebGPU the views show a message box of Windows 98 with the
+   caption 3D-Baukasten and the critical icon (C-109). */
+html[data-look="classic"] #fallback {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  z-index: 5;
+  display: block;
+  width: 320px;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 29px 12px 12px 56px;
+  transform: translate(-50%, -50%);
+  background: var(--c-face) var(--c-img-critical) no-repeat 12px 33px;
+  color: #000;
+  text-align: left;
+  box-shadow: var(--c-bevel-window);
+}
+
+html[data-look="classic"] #fallback::before {
+  content: "3D-Baukasten" !important;
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  top: 3px;
+  height: 18px;
+  padding-left: 3px;
+  background: var(--c-caption);
+  color: #fff;
+  font: 700 11px/18px var(--c-font);
+}
+
+html[data-look="classic"] #fallback h2 {
+  margin: 4px 0 6px;
+  font: 700 11px/13px var(--c-font);
+}
+
+html[data-look="classic"] #fallback p {
+  max-width: none;
+  margin: 0;
+  color: #000;
+  font: 11px/13px var(--c-font);
+}
+
+/*
+ * 8. F3 Werkzeugleiste and F2 Körperleiste (C-110 to C-116).
+ */
+
+html[data-look="classic"] #tb1,
+html[data-look="classic"] #tb2 {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* TB2 is a Wrappable comctl toolbar aligned to the top of F2: its buttons
+   flow in rows as wide as the window, which gives one column in the narrow
+   window, a partly cut button at the bottom as in version 1.3, and further
+   columns when the user widens F2 (C-074, C-114). */
+html[data-look="classic"] #tb2 {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+html[data-look="classic"] .tb-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 39px;
+  height: 38px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--c-face);
+  color: #000;
+  box-shadow: var(--c-bevel-raised);
+  overflow: hidden;
+  cursor: default;
+}
+
+html[data-look="classic"] .tb-button:hover {
+  background: var(--c-face);
+  color: #000;
+}
+
+html[data-look="classic"] .tb-button > svg,
+html[data-look="classic"] .tb-button > img,
+html[data-look="classic"] .tb-button > span {
+  display: block;
+  width: 32px;
+  height: 32px;
+  shape-rendering: crispEdges;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+html[data-look="classic"] .tb-button > span > svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+
+html[data-look="classic"] .tb-button:active {
+  box-shadow: var(--c-bevel-pressed);
+}
+
+/* A latched button of version 2.0 (C-052): the pressed edge over the
+   dither of white and face. */
+html[data-look="classic"] .tb-button[aria-pressed="true"] {
+  background: var(--c-img-dither);
+  box-shadow: var(--c-bevel-pressed);
+}
+
+html[data-look="classic"] .tb-button:active > *,
+html[data-look="classic"] .tb-button[aria-pressed="true"] > * {
+  transform: translate(1px, 1px);
+}
+
+html[data-look="classic"] .tb-button:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: -4px;
+}
+
+html[data-look="classic"] .tb-button.blank > * {
+  display: none;
+}
+
+/*
+ * 9. F4 Eingaben: the SSTab and its six tabs (C-120 to C-158).
+ */
+
+html[data-look="classic"] #sstab1 {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 245px;
+  height: 553px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--c-face);
+  box-shadow: none;
+}
+
+/* The raised panel of the tab page under the two rows of tabs. */
+html[data-look="classic"] #sstab1::before {
+  content: "" !important;
+  position: absolute;
+  left: 0;
+  top: 40px;
+  width: 245px;
+  height: 513px;
+  box-shadow: inset 1px 1px #fff, inset -1px -1px #000, inset -2px -2px #808080;
+  pointer-events: none;
+}
+
+/* Two rows of three tabs, twenty pixels each. The back row is shifted ten
+   pixels to the right. The script swaps the classes front and back when a
+   tab of the back row is chosen (C-121, C-122). */
+html[data-look="classic"] #sstab1 > .tab-row {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  gap: 0;
+  width: 234px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+html[data-look="classic"] #sstab1 > .tab-row.back {
+  left: 10px;
+  top: 0;
+}
+
+html[data-look="classic"] #sstab1 > .tab-row.front {
+  left: 0;
+  top: 20px;
+  z-index: 2;
+}
+
+html[data-look="classic"] #sstab1 .tab {
+  position: relative;
+  flex: 0 0 78px;
+  width: 78px;
+  height: 20px;
+  margin: 0;
+  padding: 0 3px;
+  border: 0;
+  background: var(--c-face);
+  color: #000;
+  font: 11px/18px var(--c-font);
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  box-shadow: inset 1px 1px #fff, inset -1px 0 #000, inset -2px 0 #808080;
+  clip-path: polygon(0 2px, 2px 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
+  cursor: default;
+}
+
+html[data-look="classic"] #sstab1 .tab:hover {
+  background: var(--c-face);
+  color: #000;
+}
+
+/* The active tab is bold, two pixels taller and wider, and covers the top
+   edge of the page below it (C-123). */
+html[data-look="classic"] #sstab1 .tab[aria-selected="true"] {
+  z-index: 3;
+  flex-basis: 82px;
+  width: 82px;
+  height: 23px;
+  margin: -2px -2px 0;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+html[data-look="classic"] #sstab1 .tab:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: -4px;
+}
+
+/* The tab pages are not positioned, so their controls take the SSTab as
+   containing block and use the coordinates of f4 section 3 directly. */
+html[data-look="classic"] #sstab1 > .tab-page {
+  position: static;
+  display: block;
+  width: auto;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* Controls of the tab pages and of the frames inside them. The resets
+   undo the flex and grid placement of the modern look. */
+html[data-look="classic"] #sstab1 > .tab-page > *,
+html[data-look="classic"] #sstab1 .tab-page .c-frame > :not(legend),
+html[data-look="classic"] #f5 .c-frame > *,
+html[data-look="classic"] #f6 .c-frame > :not(legend) {
+  position: absolute;
+  flex: none;
+  float: none;
+  align-self: auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+}
+
+/* The frames with the light grey of F4.frm (C-019). */
+html[data-look="classic"] #frame8,
+html[data-look="classic"] #frame7-0,
+html[data-look="classic"] #frame5,
+html[data-look="classic"] #frame9-0,
+html[data-look="classic"] #frame9-1,
+html[data-look="classic"] #frame7-1 {
+  background: var(--c-frame-light);
+}
+
+/* Tab 0 "Körper" (C-130 to C-137). */
+html[data-look="classic"] #frame8 { left: 8px; top: 48px; width: 217px; height: 129px; }
+/* CB2 at 12/64 of F4, 4/16 in Frame8. */
+html[data-look="classic"] #cb2 { left: 4px; top: 16px; width: 205px; height: 82px; }
+
+html[data-look="classic"] #frame1 {
+  left: 8px;
+  top: 176px;
+  width: 217px;
+  height: 325px;
+  background: var(--c-geo);
+}
+
+/* The controls of GEOMETRIEDATEN: F4 coordinates minus 8/176. */
+html[data-look="classic"] #cb1 { left: 8px; top: 16px; width: 201px; height: 21px; z-index: 4; }
+html[data-look="classic"] #cb1 .c-combo-edit { font-weight: 700; }
+
+html[data-look="classic"] #frame1 .geo-label {
+  height: 17px;
+  background: var(--c-geo);
+  color: #000;
+}
+
+html[data-look="classic"] #l1-1 { left: 24px; top: 40px; width: 185px; }
+html[data-look="classic"] #l1-2 { left: 80px; top: 40px; width: 65px; }
+html[data-look="classic"] #l1-3 { left: 144px; top: 40px; width: 73px; }
+html[data-look="classic"] #l1-4 { left: 24px; top: 80px; width: 69px; }
+html[data-look="classic"] #l1-5 { left: 96px; top: 80px; width: 53px; }
+html[data-look="classic"] #l1-6 { left: 160px; top: 80px; width: 53px; }
+html[data-look="classic"] #l1-7 { left: 24px; top: 120px; width: 181px; }
+html[data-look="classic"] #l1-8 { left: 184px; top: 120px; width: 9px; }
+html[data-look="classic"] #l1-9 { left: 192px; top: 120px; width: 13px; }
+html[data-look="classic"] #l1-10 { left: 24px; top: 176px; width: 69px; }
+
+/* The fields T1: three columns at x 32, 104 and 168 of F4, rows at y 232,
+   272, 312 and 368 (C-136). */
+html[data-look="classic"] #frame1 .t1 {
+  width: 45px;
+  height: 19px;
+  font-weight: 700;
+}
+
+html[data-look="classic"] #t1-1 { left: 24px; top: 56px; }
+html[data-look="classic"] #t1-2 { left: 96px; top: 56px; }
+html[data-look="classic"] #t1-3 { left: 160px; top: 56px; }
+html[data-look="classic"] #t1-4 { left: 24px; top: 96px; }
+html[data-look="classic"] #t1-5 { left: 96px; top: 96px; }
+html[data-look="classic"] #t1-6 { left: 160px; top: 96px; }
+html[data-look="classic"] #t1-7 { left: 24px; top: 136px; }
+html[data-look="classic"] #t1-8 { left: 96px; top: 136px; }
+html[data-look="classic"] #t1-9 { left: 160px; top: 136px; }
+html[data-look="classic"] #t1-10 { left: 24px; top: 192px; }
+
+/* The reserved rows 5 and 6 of version 1.3 hold the name and the group of
+   version 2.0 (row 5 at y 392 and 408 of F4, row 6 at y 432 and 448). */
+html[data-look="classic"] #l1-11 { left: 24px; top: 216px; width: 181px; }
+html[data-look="classic"] #t1-11 { left: 24px; top: 232px; width: 181px; height: 19px; font-weight: 400; }
+html[data-look="classic"] #l1-12 { left: 24px; top: 256px; width: 181px; }
+html[data-look="classic"] #t1-12 { left: 24px; top: 272px; width: 181px; height: 21px; }
+
+/* The hint for groups and ends sits in row 4, which only a Disc uses. */
+html[data-look="classic"] #geo-hint {
+  left: 24px;
+  top: 168px;
+  width: 185px;
+  height: 42px;
+  padding: 0;
+  background: transparent;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  white-space: normal;
+  overflow: hidden;
+}
+
+/* Frame7(0) with Einfügen, Ändern and the narrower Löschen (C-137). */
+html[data-look="classic"] #frame7-0 { left: 8px; top: 496px; width: 217px; height: 49px; }
+html[data-look="classic"] #btn-einf { left: 8px; top: 16px; width: 65px; height: 25px; }
+html[data-look="classic"] #btn-change { left: 80px; top: 16px; width: 65px; height: 25px; }
+html[data-look="classic"] #btn-clear { left: 152px; top: 16px; width: 57px; height: 25px; }
+
+/* Tab 1 "Oberfläche" is empty in version 1.3. Version 2.0 shows only the
+   hint where colour and texture are set (C-138). */
+html[data-look="classic"] .tab-page[data-page="oberflaeche"] > .surface-hint {
+  left: 12px;
+  top: 56px;
+  width: 221px;
+  height: auto;
+  padding: 0;
+  background: transparent;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  text-align: left;
+  white-space: normal;
+}
+
+html[data-look="classic"] .tab-page[data-page="oberflaeche"] > :not(.surface-hint) {
+  display: none;
+}
+
+/* Tab 2 "Ausgabe" (C-140 to C-143). */
+html[data-look="classic"] #frame5 { left: 8px; top: 48px; width: 217px; height: 321px; }
+html[data-look="classic"] #text1 { left: 8px; top: 16px; width: 205px; height: 297px; }
+html[data-look="classic"] #tfname { left: 8px; top: 376px; width: 217px; height: 19px; }
+html[data-look="classic"] #frame9-0 { left: 8px; top: 408px; width: 217px; height: 57px; }
+html[data-look="classic"] #bpov-comp { left: 12px; top: 16px; width: 89px; height: 33px; }
+html[data-look="classic"] #bpov-save { left: 120px; top: 16px; width: 85px; height: 33px; }
+
+/* The command line of POV-Ray, new in version 2.0, under the buttons. */
+html[data-look="classic"] #pov-command {
+  left: 8px;
+  top: 470px;
+  width: 217px;
+  height: 39px;
+  padding: 0;
+  background: transparent;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  white-space: normal;
+  word-break: break-all;
+  overflow: hidden;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Tab 3 "Bilder" (C-145, C-146). */
+html[data-look="classic"] #file1 { left: 8px; top: 56px; width: 217px; height: 305px; }
+html[data-look="classic"] #tdatei { left: 8px; top: 376px; width: 217px; height: 19px; }
+html[data-look="classic"] #frame9-1 { left: 8px; top: 408px; width: 217px; height: 57px; }
+html[data-look="classic"] #bbild-anz { left: 8px; top: 16px; width: 89px; height: 33px; }
+html[data-look="classic"] #bbild-beenden { left: 120px; top: 16px; width: 89px; height: 33px; }
+
+/* The stray PictureBox Cmdia on the edge of Frame9(1), in version 2.0 the
+   small button that adds pictures (C-146). It keeps the sunken face. */
+html[data-look="classic"] #cmdia {
+  left: 64px;
+  top: 408px;
+  z-index: 1;
+  width: 24px;
+  height: 16px;
+  min-height: 0;
+  padding: 0 0 2px;
+  background: var(--c-face);
+  font: 11px/10px var(--c-font);
+  box-shadow: var(--c-bevel-sunken);
+}
+
+html[data-look="classic"] #cmdia:active:not(:disabled) {
+  padding: 0 0 2px;
+  box-shadow: var(--c-bevel-sunken);
+}
+
+/* Tab 4 "Kamera" (C-150 to C-154). */
+html[data-look="classic"] #label1-kamera {
+  left: 24px;
+  top: 72px;
+  width: 153px;
+  height: 49px;
+  background: var(--c-face);
+  font: 16px/19px var(--c-font);
+  white-space: normal;
+}
+
+html[data-look="classic"] #frame6 { left: 8px; top: 208px; width: 217px; height: 153px; }
+
+/* The scroll bars and their fields: F4 coordinates minus 8/208. */
+html[data-look="classic"] #hs-4 { left: 24px; top: 32px; width: 65px; }
+html[data-look="classic"] #hs-1 { left: 24px; top: 72px; width: 65px; }
+html[data-look="classic"] #hs-2 { left: 24px; top: 96px; width: 65px; }
+html[data-look="classic"] #hs-3 { left: 24px; top: 120px; width: 65px; }
+
+html[data-look="classic"] #frame6 .hst {
+  width: 33px;
+  height: 19px;
+}
+
+html[data-look="classic"] #hst-4 { left: 96px; top: 32px; }
+html[data-look="classic"] #hst-1 { left: 96px; top: 72px; }
+html[data-look="classic"] #hst-2 { left: 96px; top: 96px; }
+html[data-look="classic"] #hst-3 { left: 96px; top: 120px; }
+
+/* Version 1.3 has no labels at the scroll bars (f4 quirk 8). The labels
+   of version 2.0 stand to the right of the fields, in the empty part of
+   Frame6, so nothing of 1.3 moves. */
+html[data-look="classic"] #frame6 .hs-label {
+  left: 136px;
+  width: 72px;
+  height: 19px;
+  line-height: 19px;
+}
+
+html[data-look="classic"] #lhs-4 { top: 32px; }
+html[data-look="classic"] #lhs-1 { top: 72px; }
+html[data-look="classic"] #lhs-2 { top: 96px; }
+html[data-look="classic"] #lhs-3 { top: 120px; }
+
+html[data-look="classic"] #start { left: 24px; top: 376px; width: 65px; height: 25px; }
+html[data-look="classic"] #command2 { left: 144px; top: 376px; width: 65px; height: 25px; }
+html[data-look="classic"] #frame7-1 { left: 8px; top: 408px; width: 217px; height: 57px; }
+html[data-look="classic"] #btn1-1 { left: 12px; top: 16px; width: 89px; height: 33px; }
+html[data-look="classic"] #btn2-1 { left: 120px; top: 16px; width: 89px; height: 33px; }
+
+/* Tab 5 "Einstellung" (C-156 to C-158). */
+html[data-look="classic"] #tpasswd { left: 12px; top: 56px; width: 109px; height: 19px; }
+html[data-look="classic"] #lpasswd { left: 136px; top: 60px; width: 61px; height: 13px; }
+html[data-look="classic"] #frame10 { left: 8px; top: 84px; width: 217px; height: 209px; }
+
+/* Frame10: F4 coordinates minus 8/84. */
+html[data-look="classic"] #lhome-0 { left: 8px; top: 16px; width: 201px; height: 13px; }
+html[data-look="classic"] #tbau-home { left: 8px; top: 32px; width: 201px; height: 19px; }
+html[data-look="classic"] #lhome-1 { left: 8px; top: 56px; width: 201px; height: 13px; }
+html[data-look="classic"] #tpov-home { left: 8px; top: 72px; width: 201px; height: 19px; }
+html[data-look="classic"] #lhome-2 { left: 8px; top: 100px; width: 201px; height: 13px; }
+html[data-look="classic"] #tbsp-home { left: 8px; top: 120px; width: 201px; height: 19px; }
+html[data-look="classic"] #lhome-3 { left: 8px; top: 148px; width: 201px; height: 13px; }
+html[data-look="classic"] #tbsp-def { left: 8px; top: 168px; width: 201px; height: 19px; }
+
+/* Frame2 of the tab: F4 coordinates minus 8/336. */
+html[data-look="classic"] #frame2-einst { left: 8px; top: 336px; width: 217px; height: 129px; }
+html[data-look="classic"] #bscreen { left: 16px; top: 40px; width: 185px; height: 37px; }
+html[data-look="classic"] #bdatei-change { left: 16px; top: 88px; width: 89px; height: 33px; }
+html[data-look="classic"] #bdatei-def { left: 120px; top: 88px; width: 81px; height: 33px; }
+
+/*
+ * 10. F5: coordinates, zoom and status (C-160 to C-166, readme-3).
+ * F5 has no edge and no caption. Its controls use the coordinates of their
+ * frames in F5.frm.
+ */
+
+html[data-look="classic"] #f5 {
+  position: absolute;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--c-face);
+  color: #000;
+  box-shadow: none;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html[data-look="classic"] #f5 > .c-frame {
+  position: absolute;
+  top: 0;
+  height: 33px;
+  background: var(--c-face);
+}
+
+html[data-look="classic"] #f5-frame2 { left: 0; width: 201px; }
+html[data-look="classic"] #f5-frame1 { left: 200px; width: 57px; }
+
+/* Frame6.Width = F5.Width minus 50 twips: the frame runs past the right
+   edge of F5, which clips it as the screen of version 1.3 did (C-160). */
+html[data-look="classic"] #f5-frame6 { left: 256px; width: calc(100% - 3px); }
+
+html[data-look="classic"] #f5 .f5-label {
+  height: 17px;
+  background: var(--c-face);
+  color: #000;
+  font: 700 13px/16px var(--c-font);
+}
+
+html[data-look="classic"] #f5 #lx { left: 8px; top: 8px; width: 17px; color: var(--c-lx); }
+html[data-look="classic"] #ly { left: 72px; top: 8px; width: 9px; }
+html[data-look="classic"] #lz { left: 136px; top: 8px; width: 9px; }
+
+html[data-look="classic"] #tx,
+html[data-look="classic"] #ty,
+html[data-look="classic"] #tz {
+  z-index: 1;
+  width: 49px;
+  height: 22px;
+  padding: 2px 3px;
+  font: 700 13px/16px var(--c-font);
+  cursor: default;
+}
+
+html[data-look="classic"] #tx { left: 16px; top: 8px; color: var(--c-lcd-x); }
+html[data-look="classic"] #ty { left: 80px; top: 8px; color: var(--c-lcd-y); }
+html[data-look="classic"] #tz { left: 144px; top: 8px; height: 21px; color: var(--c-lcd-z); }
+
+html[data-look="classic"] #label3-1 { left: 1px; top: 10px; width: 17px; height: 17px; }
+html[data-look="classic"] #d3-zoomin { left: 16px; top: 10px; }
+html[data-look="classic"] #d3-zoomout { left: 32px; top: 10px; }
+
+html[data-look="classic"] #label2 {
+  left: 7px;
+  top: 8px;
+  width: 17px;
+  height: 17px;
+  font: 13px/16px var(--c-font);
+}
+
+html[data-look="classic"] #tzoom {
+  left: 24px;
+  top: 8px;
+  width: 33px;
+  height: 21px;
+  padding: 2px 3px;
+  font: 13px/15px var(--c-font);
+  overflow: hidden;
+  text-overflow: clip;
+  cursor: default;
+}
+
+html[data-look="classic"] #d2-zoomin { left: 56px; top: 10px; }
+html[data-look="classic"] #d2-zoomout { left: 72px; top: 10px; }
+
+html[data-look="classic"] #tstatus {
+  left: 88px;
+  top: 8px;
+  display: block;
+  width: calc(100% - 97px);
+  height: 21px;
+  padding: 4px 3px 0 4px;
+  font: 11px/13px var(--c-font);
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: default;
+}
+
+/* Label1 of F5 is unused and hidden behind TStatus in version 1.3. */
+html[data-look="classic"] #label1-f5 {
+  left: 280px;
+  top: 8px;
+  width: 33px;
+  height: 13px;
+  visibility: hidden;
+}
+
+/*
+ * 11. F6 Farben/Texturen (C-170, C-171). The colour frame takes the colour
+ * of the selected body, which the script sets as an inline background.
+ */
+
+html[data-look="classic"] #frame11 {
+  position: absolute;
+  left: 8px;
+  top: 4px;
+  width: 228px;
+  height: 80px;
+}
+
+html[data-look="classic"] #frame11 > legend {
+  left: 2px;
+}
+
+html[data-look="classic"] #cb3 { left: 8px; top: 20px; width: 212px; height: 21px; }
+
+html[data-look="classic"] #frame-farbe {
+  position: absolute;
+  left: 8px;
+  top: 92px;
+  width: 228px;
+  height: 72px;
+  background-color: #fff;
+}
+
+html[data-look="classic"] #frame-farbe > legend {
+  display: none;
+}
+
+html[data-look="classic"] #bcolor { left: 8px; top: 20px; width: 212px; height: 22px; }
+
+/*
+ * 12. Dialogs: the Windows 98 edge, the purple caption and no backdrop.
+ */
+
+html[data-look="classic"] dialog.c-win {
+  position: fixed;
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 3px;
+  border: 0;
+  background: var(--c-face);
+  color: #000;
+  font: 11px/13px var(--c-font);
+  box-shadow: var(--c-bevel-window);
+  overflow: visible;
+}
+
+html[data-look="classic"] dialog.c-win[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+html[data-look="classic"] dialog.c-win:not([open]) {
+  display: none;
+}
+
+html[data-look="classic"] dialog.c-win:not(:modal) {
+  z-index: 400;
+}
+
+html[data-look="classic"] dialog.c-win::backdrop {
+  background: transparent;
+  backdrop-filter: none;
+}
+
+html[data-look="classic"] dialog.c-win > .win-client {
+  padding: 10px;
+}
+
+html[data-look="classic"] dialog .c-frame {
+  padding: 18px 10px 10px;
+}
+
+html[data-look="classic"] .dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+html[data-look="classic"] .dialog-buttons > .c-button {
+  min-width: 75px;
+  height: 23px;
+}
+
+/* The colour dialog of Windows, ChooseColor (C-172 to C-177). It opens
+   under the tabs of F4. Its controls use the coordinates of the outer
+   dialog as measured on page 93 of the thesis. */
+html[data-look="classic"] #farben {
+  position: absolute;
+  left: calc(var(--screen-w) - 252px);
+  top: 270px;
+  right: auto;
+  bottom: auto;
+  width: 219px;
+  height: 320px;
+  margin: 0;
+}
+
+html[data-look="classic"] #farben.full {
+  left: calc(var(--screen-w) - 446px);
+  width: 446px;
+}
+
+html[data-look="classic"] #farben:has(.farben-full:not([hidden])) {
+  left: calc(var(--screen-w) - 446px);
+  width: 446px;
+}
+
+html[data-look="classic"] #farben > .win-client.farben-client {
+  position: static;
+  display: block;
+  padding: 0;
+}
+
+html[data-look="classic"] #farben .farben-left,
+html[data-look="classic"] #farben .farben-buttons,
+html[data-look="classic"] #farben .farben-full {
+  display: contents;
+}
+
+html[data-look="classic"] #farben .farben-left > *,
+html[data-look="classic"] #farben .farben-buttons > *,
+html[data-look="classic"] #farben .farben-full > * {
+  position: absolute;
+  margin: 0;
+}
+
+html[data-look="classic"] #farben .farben-label {
+  width: auto;
+  height: 13px;
+  overflow: visible;
+}
+
+html[data-look="classic"] #farben .farben-left > .farben-label:first-child { left: 8px; top: 30px; }
+html[data-look="classic"] #farben .farben-grund + .farben-label { left: 8px; top: 190px; }
+
+html[data-look="classic"] #farben .farben-grund,
+html[data-look="classic"] #farben .farben-custom {
+  display: grid;
+  grid-template-columns: repeat(8, 16px);
+  grid-auto-rows: 13px;
+  gap: 8px 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+html[data-look="classic"] #farben .farben-grund { left: 10px; top: 44px; }
+html[data-look="classic"] #farben .farben-custom { left: 10px; top: 206px; }
+
+html[data-look="classic"] #farben .farben-swatch {
+  display: block;
+  width: 16px;
+  height: 13px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: var(--c-bevel-well);
+  cursor: default;
+}
+
+html[data-look="classic"] #farben .farben-swatch[aria-selected="true"],
+html[data-look="classic"] #farben .farben-swatch[aria-checked="true"] {
+  box-shadow: var(--c-bevel-well), 0 0 0 1px #000;
+  outline: 1px dotted #000;
+  outline-offset: 2px;
+}
+
+html[data-look="classic"] #farben-define { left: 8px; top: 262px; width: 203px; height: 23px; }
+html[data-look="classic"] #farben-ok { left: 8px; top: 291px; width: 66px; height: 23px; }
+html[data-look="classic"] #farben-cancel { left: 78px; top: 291px; width: 66px; height: 23px; }
+
+/* The right half after "Farben definieren >>" (C-176). */
+html[data-look="classic"] #farben-hs {
+  left: 229px;
+  top: 30px;
+  width: 178px;
+  height: 130px;
+  border: 1px solid;
+  border-color: #808080 #fff #fff #808080;
+  cursor: crosshair;
+}
+
+html[data-look="classic"] #farben-lum {
+  left: 419px;
+  top: 30px;
+  width: 12px;
+  height: 130px;
+  border: 1px solid;
+  border-color: #808080 #fff #fff #808080;
+}
+
+html[data-look="classic"] #farben-preview {
+  left: 229px;
+  top: 171px;
+  width: 40px;
+  height: 31px;
+  border: 0;
+  box-shadow: var(--c-bevel-sunken);
+}
+
+html[data-look="classic"] #farben .farben-preview-label {
+  left: 219px;
+  top: 205px;
+  width: 60px;
+  overflow: visible;
+  text-align: center;
+}
+
+html[data-look="classic"] #farben label.farben-num {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  width: 64px;
+  height: 19px;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  white-space: nowrap;
+}
+
+html[data-look="classic"] #farben label.farben-num > input {
+  position: static;
+  width: 26px;
+  height: 19px;
+  padding: 2px 3px;
+  text-align: right;
+}
+
+html[data-look="classic"] #farben label.farben-num:nth-of-type(1) { left: 275px; top: 168px; width: 68px; }
+html[data-look="classic"] #farben label.farben-num:nth-of-type(2) { left: 275px; top: 190px; width: 68px; }
+html[data-look="classic"] #farben label.farben-num:nth-of-type(3) { left: 275px; top: 212px; width: 68px; }
+html[data-look="classic"] #farben label.farben-num:nth-of-type(4) { left: 347px; top: 168px; width: 60px; }
+html[data-look="classic"] #farben label.farben-num:nth-of-type(5) { left: 347px; top: 190px; width: 60px; }
+html[data-look="classic"] #farben label.farben-num:nth-of-type(6) { left: 347px; top: 212px; width: 60px; }
+
+html[data-look="classic"] #farben-add { left: 229px; top: 262px; width: 203px; height: 23px; }
+
+/* MsgBox (C-187): a 32 pixel icon, the text to its right, the buttons of
+   75 by 23 centred below. */
+html[data-look="classic"] #msgbox {
+  min-width: 200px;
+  max-width: 460px;
+}
+
+html[data-look="classic"] #msgbox > .win-client {
+  padding: 12px 12px 12px;
+}
+
+html[data-look="classic"] #msgbox .c-msgbox-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 0 4px 14px;
+}
+
+html[data-look="classic"] #msgbox .c-msgbox-icon {
+  display: block;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-look="classic"] #msgbox .c-msgbox-icon > svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+  shape-rendering: crispEdges;
+}
+
+html[data-look="classic"] #msgbox .c-msgbox-text {
+  max-width: 380px;
+  margin: 0;
+  padding: 9px 0 0;
+  font: 11px/13px var(--c-font);
+  white-space: pre-line;
+}
+
+html[data-look="classic"] #msgbox .c-msgbox-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+html[data-look="classic"] #msgbox .c-msgbox-buttons > .c-button {
+  width: 75px;
+  height: 23px;
+}
+
+/* Öffnen. */
+html[data-look="classic"] #open-dialog {
+  width: 360px;
+}
+
+html[data-look="classic"] #open-dialog .open-client {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+html[data-look="classic"] #open-dialog .open-list {
+  width: 100%;
+  height: 108px;
+}
+
+html[data-look="classic"] .file-button {
+  display: inline-flex;
+  align-items: center;
+  height: 23px;
+  padding: 1px 10px;
+}
+
+/* Bildschirmeinstellungen. */
+html[data-look="classic"] #screen-dialog {
+  width: 380px;
+}
+
+html[data-look="classic"] #screen-dialog .screen-client {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+html[data-look="classic"] #screen-dialog .c-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+html[data-look="classic"] #screen-dialog label {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-height: 15px;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  white-space: nowrap;
+}
+
+html[data-look="classic"] #screen-dialog label > select {
+  flex: none;
+  width: 150px;
+  margin-left: auto;
+}
+
+/* Hilfe. */
+html[data-look="classic"] #help-dialog {
+  width: 560px;
+}
+
+html[data-look="classic"] #help-dialog .help-client {
+  max-height: calc(100vh - 80px);
+  overflow: auto;
+}
+
+html[data-look="classic"] #help-dialog h2 {
+  margin: 0 0 6px;
+  font: 700 13px/16px var(--c-font);
+}
+
+html[data-look="classic"] #help-dialog p {
+  margin: 0 0 8px;
+  color: #000;
+  font: 11px/13px var(--c-font);
+}
+
+html[data-look="classic"] #help-dialog .keys {
+  width: 100%;
+  margin: 0 0 8px;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: var(--c-bevel-sunken);
+}
+
+html[data-look="classic"] #help-dialog .keys td {
+  padding: 3px 6px;
+  border: 0;
+  border-bottom: 1px solid var(--c-face);
+  vertical-align: top;
+  font: 11px/13px var(--c-font);
+}
+
+html[data-look="classic"] #help-dialog .keys tr:first-child td {
+  padding-top: 5px;
+}
+
+html[data-look="classic"] #help-dialog .keys td:first-child {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+html[data-look="classic"] kbd {
+  display: inline-block;
+  padding: 0 3px;
+  border: 0;
+  background: var(--c-face);
+  color: #000;
+  font: 11px/13px var(--c-font);
+  box-shadow: var(--c-bevel-thin);
+}
+
+/*
+ * 13. F9 Dia-Show (C-089): black over the whole screen, the picture at the
+ * top left without scaling, the three buttons at the visible bottom right
+ * edge at rechts minus 150, 100 and 50 as in 3d_Form3.frm.
+ */
+
+html[data-look="classic"] #f9 {
+  position: fixed;
+  inset: 0;
+  z-index: 450;
+  display: block;
+  margin: 0;
+  padding: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+html[data-look="classic"] #f9-picture {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  object-fit: none;
+  transform: none;
+}
+
+html[data-look="classic"] #f9 .f9-buttons {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+  display: block;
+  width: 150px;
+  height: 17px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+html[data-look="classic"] #f9 .f9-buttons > .c-button {
+  position: absolute;
+  top: 0;
+  width: 33px;
+  height: 17px;
+}
+
+html[data-look="classic"] #bbild-rueck { left: 0; }
+html[data-look="classic"] #bbild-weiter { left: 50px; }
+html[data-look="classic"] #bbild-ende { left: 100px; }
+
+/*
+ * 14. The splash, frmSplash of version 1.3 (forms section 7): a fixed
+ * dialog of 492 by 283 pixels without caption, Frame1 inside, the stretched
+ * logo at the left, the title in Arial 32.25 point bold. Every place below
+ * adds the three pixels of the dialog frame to the .frm coordinates.
+ */
+
+html[data-look="classic"] #splash {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+html[data-look="classic"] #splash .splash-card {
+  position: relative;
+  display: block;
+  width: 498px;
+  height: 289px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--c-face);
+  color: #000;
+  font: 11px/13px var(--c-font-splash);
+  text-align: left;
+  box-shadow: var(--c-bevel-window);
+}
+
+html[data-look="classic"] #splash .splash-card::before {
+  content: "" !important;
+  position: absolute;
+  left: 13px;
+  top: 13px;
+  width: 472px;
+  height: 264px;
+  box-shadow: var(--c-bevel-etched);
+  pointer-events: none;
+}
+
+html[data-look="classic"] #splash .splash-card > * {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  color: #000;
+  white-space: nowrap;
+}
+
+html[data-look="classic"] #splash .splash-logo {
+  left: 27px;
+  top: 56px;
+  width: 121px;
+  height: 159px;
+}
+
+html[data-look="classic"] #splash .splash-logo > svg,
+html[data-look="classic"] #splash .splash-logo > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  shape-rendering: crispEdges;
+  image-rendering: pixelated;
+}
+
+html[data-look="classic"] #splash .splash-title {
+  left: 171px;
+  top: 79px;
+  font: 700 43px/51px var(--c-font-splash);
+  letter-spacing: normal;
+}
+
+html[data-look="classic"] #splash .splash-version {
+  right: 55px;
+  top: 159px;
+  font: 700 21px/24px var(--c-font-splash);
+  text-align: right;
+}
+
+html[data-look="classic"] #splash .splash-origin {
+  left: 11px;
+  top: 19px;
+  width: 457px;
+  font: 11px/17px var(--c-font-splash);
+  text-align: right;
+}
+
+html[data-look="classic"] #splash .splash-copyright {
+  left: 307px;
+  top: 207px;
+  font: 11px/17px var(--c-font-splash);
+}
+
+html[data-look="classic"] #splash .splash-state {
+  left: 13px;
+  top: 247px;
+  width: 457px;
+  font: 11px/13px var(--c-font-splash);
+  overflow: hidden;
+}
