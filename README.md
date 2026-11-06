@@ -1,3 +1,76 @@
+# 3D-Bausteine 2.0
+
+3D-Bausteine ist das CAD-Programm der Diplomarbeit „Grundlagen der 3D-Computergrafik“ von Herbert
+Kleber (2002): Schülerinnen und Schüler bauen Szenen aus geometrischen Grundkörpern, sehen sie in
+den zugeordneten Normalrissen des GZ-Unterrichts und lassen sie fotorealistisch berechnen. Version
+2.0 schreibt das Programm neu, in Rust. Es läuft ganz im Browser: Ein Web Worker führt ein Modul aus
+WebAssembly aus, das die Szenen in einem Dienst auf [Aosabi](https://github.com/netsnek/aosabi) mit
+einer GraphQL-API hält und die Risse mit WebGPU zeichnet, das Raytracing eingeschlossen. Einen Server
+braucht die Seite nicht.
+
+![Haus mit Tür und Fenster in Aufriss, Kreuzriss, Grundriss und Schrägriss](Documentation/images/zugeordnete-normalrisse.png)
+
+![Das Haus im Raytracing des Schrägrisses](Documentation/images/raytracing.png)
+
+![Dieselbe Szene in der klassischen Darstellung von Version 1.3](Documentation/images/klassisch.png)
+
+## Was Version 2.0 kann
+
+- Jeder Knopf, jedes Menü und jede Einstellung von Version 1.3 steht an seinem alten Platz: die
+  Werkzeugleiste links oben, die Körperleiste darunter, Form1 mit den Menüs Datei, Bearbeiten,
+  Objekte und Ansicht und den vier Rissen, das Fenster Eingaben mit den Registern Körper,
+  Oberfläche, Ausgabe, Bilder, Kamera und Einstellung, darunter Farben/Texturen, und die Leiste mit
+  Koordinaten, Zoom und Status unter den Rissen. Alle Symbole sind SVG.
+- Zwei Darstellungen zum Umschalten: eine moderne, hell oder dunkel, und die klassische von 2002 im
+  Aussehen von Windows 98, mit schwarzen Rissen, weißem Punktraster, Drahtmodellen und der
+  Schrägprojektion von Version 1.3.
+- Die acht Körper von Version 1.3 mit denselben Eingabemasken, die vier CSG-Operationen mit
+  CSG-Ende und neue Körper mit „#Neu“ und „Neu_Ende“. Die Liste OBJEKTE steht im Format von 1.3.
+- Einfügen mit der Maus wie in Version 1.3: Körper wählen, in einem Riss den Bezugspunkt klicken, in
+  einem zweiten die dritte Koordinate, dann ebenso die Größe. Dazu Verschieben durch Ziehen,
+  Rückgängig und Wiederholen, Mausrad und Verschieben der Ansicht.
+- Raytracing im Schrägriss direkt im Browser, mit Schatten, Spiegelung, Glas und den 43
+  Standardtexturen von POV-Ray. Die Ausgabe als Datei für POV-Ray bleibt, ebenso die Kamera mit ihrer
+  Drehung und die Dia-Show mit den gespeicherten Bildern.
+- Szenen bleiben im Browser gespeichert, lassen sich als Datei speichern und öffnen und als Link
+  weitergeben.
+
+## Schnellstart
+
+```sh
+git clone --recurse-submodules https://github.com/kleberbaum/3D-BAUSTEINE
+cd 3D-BAUSTEINE
+cargo install wasm-bindgen-cli --version 0.2.130 --locked
+sh tools/build.sh
+python3 tests/serve.py web
+```
+
+Dann `http://localhost:8000` in einem Browser mit WebGPU öffnen: Chrome oder Edge ab Version 113,
+Safari ab 26 oder Firefox ab 141. Jeder andere statische Webserver tut es ebenso. Der Aufbau des
+Programms steht in [Documentation/architecture.md](Documentation/architecture.md), die API in
+[Documentation/graphql.md](Documentation/graphql.md), die Eigenheiten von Version 1.3 und wie
+Version 2.0 mit ihnen umgeht in [Documentation/quirks.md](Documentation/quirks.md). Die Tests sind
+Jupyter-Notebooks unter `tests/notebooks`, `python3 tests/run.py` führt sie mit papermill aus.
+
+| Ordner | Inhalt |
+| --- | --- |
+| `crates/bausteine-core` | Die Geometrie: Körper, Matrizen, Risse, Kanten, POV-Export, Raytracing-Programm |
+| `crates/bausteine-web` | Das Modul des Web Workers: der Dienst über `aosabi::embed` und der Renderer auf WebGPU |
+| `crates/bausteine-devtool` | Die Schnittstelle der Notebooks zur Geometrie |
+| `service` | Der Dienst auf Aosabi mit der GraphQL-API |
+| `web` | Die Oberfläche im Browser und das Skript des Web Workers |
+| `tests` | Die Notebooks |
+| `third_party/aosabi` | Aosabi als Submodul |
+| Die übrigen Dateien | Version 1.3 von 2002 in Visual Basic 5 und C, unverändert |
+
+## Lizenz
+
+Herbert Kleber hat für die Dateien von Version 1.3 noch keine Lizenz gewählt, sie tragen keine. Die
+Dateien von Version 2.0 von Florian Kleber stehen unter der GNU General Public License Version 2
+(GPL-2.0-only). [COPYING](COPYING) sagt, welche Datei zu welchem Teil gehört.
+
+---
+
 # DAS PROJEKT 3D-Bausteine
 [Diplomarbeit_pdf](https://github.com/tw0sday/3D-BAUSTEINE/releases/download/v1.3.0/Diplomarbeit.pdf)
 
