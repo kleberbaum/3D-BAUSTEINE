@@ -1,0 +1,2549 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+/*
+ * 3D-Bausteine style.css: the modern look of version 2.0, the default
+ * appearance of the page.
+ *
+ * Copyright (C) 2026 Florian Kleber
+ *
+ * The page holds the six windows of 3D-Baukasten 1.3 by Herbert Kleber. This
+ * stylesheet docks them into one grid that keeps the place of every window as
+ * version 1.3 arranges it in Form_Set: the tool bar F3 above the body bar F2 in
+ * the left column, Form1 with its caption, menu bar and four views in the
+ * middle with the bar F5 under the views, and the register form F4 "Eingaben"
+ * above the window F6 "Farben/Texturen" in the right column. The dialogs, the
+ * Dia-Show F9, the splash, the tooltip and the toast complete the page.
+ *
+ * Two themes share one set of tokens on the root element, light by default and
+ * dark under html[data-theme="dark"]. The classic look of version 1.3 lives in
+ * classic.css, scoped under html[data-look="classic"], and overrides these
+ * rules. To make that easy, the rules here reach elements by class where they
+ * can and wrap every id in :where(), so a rule of the classic look always wins
+ * over the rule it replaces. The dark tokens never apply in the classic look.
+ *
+ * The item numbers M-nnn in the comments refer to the plan of the modern look.
+ */
+
+/* Tokens of the light theme (M-020 to M-043). */
+
+:root {
+  --bg: #f4f4f2;
+  --surface: #ffffff;
+  --surface-2: #eef0ee;
+  --surface-geo: #e6f4f3;
+  --geo-line: #b9dcd9;
+  --view-bg: #fbfbfa;
+  --view-line: #c9ccc6;
+  --line: #e1e3df;
+  --line-strong: #c9ccc6;
+  --text: #1c2024;
+  --text-2: #555c64;
+  --text-3: #7d848c;
+  --accent: #4f46e5;
+  --accent-soft: #eceafd;
+  --accent-text: #ffffff;
+  --danger: #c8102e;
+  --x: #c8102e;
+  --y: #9a6700;
+  --z: #1a7f37;
+  --lcd-bg: #101214;
+  --lcd-x: #ff5a5a;
+  --lcd-y: #ffd84d;
+  --lcd-z: #5fe08a;
+  --lcd-rot: #ff7b7b;
+  --lock-free: var(--lcd-y);
+  --lock-locked: var(--lcd-z);
+  --mark-green: #00c853;
+  --mark-yellow: #ffd600;
+  --mark-red: #ff1744;
+  --radius: 8px;
+  --radius-s: 5px;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 14px rgb(0 0 0 / 0.06);
+  --shadow-pop: 0 8px 28px rgb(0 0 0 / 0.18);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, "DejaVu Sans Mono", monospace;
+  --fs-ui: 14px;
+  --fs-dense: 13px;
+  --fs-title: 15px;
+  --fs-lcd: 15px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --rail-w: 48px;
+  --tool-w: 40px;
+  --tool-h: 38px;
+  --tool-gap: 2px;
+  --tool-icon: 24px;
+  --right-w: 300px;
+  --f5-h: 36px;
+  --caption-h: 36px;
+  --menu-h: 30px;
+  --row-h: 24px;
+  --panel-head-h: 30px;
+  --i-check: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12.5l4.5 4.5L19 7.5'/></svg>");
+  --i-close: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><path d='M6 6l12 12M18 6L6 18'/></svg>");
+  --i-chevron-down: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  --i-chevron-right: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 6l6 6-6 6'/></svg>");
+  --i-info: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='9'/><path d='M12 11v6M12 7.5v.01'/></svg>");
+  --i-lock: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235fe08a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='5' y='11' width='14' height='10' rx='2'/><path d='M8 11V8a4 4 0 0 1 8 0v3'/></svg>");
+  color-scheme: light;
+}
+
+/* Tokens of the dark theme. The classic look ignores the theme, so the selector leaves it out. */
+
+:where(:root:not([data-look="classic"]))[data-theme="dark"] {
+  --bg: #0f1114;
+  --surface: #171a1f;
+  --surface-2: #1f242b;
+  --surface-geo: #15302f;
+  --geo-line: #24504d;
+  --view-bg: #111418;
+  --view-line: #39404a;
+  --line: #262b32;
+  --line-strong: #39404a;
+  --text: #e8ebef;
+  --text-2: #a8b0ba;
+  --text-3: #737b86;
+  --accent: #8b84ff;
+  --accent-soft: #2a2757;
+  --accent-text: #0b0a1f;
+  --danger: #ff6b6b;
+  --x: #ff6b6b;
+  --y: #f5c242;
+  --z: #4ade80;
+  --mark-green: #00ff00;
+  --mark-yellow: #ffff00;
+  --mark-red: #ff0000;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.35);
+  --shadow-pop: 0 8px 28px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+/* Base rules that both looks rely on. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: var(--fs-ui) / 1.4 var(--font);
+  accent-color: var(--accent);
+  overflow: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The grid of the docked windows (M-050). The three docks are its columns. */
+
+.desktop {
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--right-w);
+  grid-template-rows: minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  min-width: 768px;
+  min-height: 540px;
+}
+
+.dock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.dock-left {
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.dock-right {
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+}
+
+/* The window chrome of version 1.3 is not drawn in the modern look (M-055). */
+
+.win-buttons {
+  display: none;
+}
+
+:where(.dock-left) .win-title {
+  display: none;
+}
+
+/* The tool windows of the right column carry a small panel heading (M-190). */
+
+:where(.dock-right) .win-title {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: var(--panel-head-h);
+  padding: 0 var(--space-3);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The left column: the tool bar F3 above the body bar F2 (M-070, M-080, M-083). */
+
+.c-win:where(#f3) {
+  flex: none;
+}
+
+.c-win:where(#f2) {
+  flex: 1 1 auto;
+  min-height: calc(3 * var(--tool-h) + 8px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--tool-gap);
+  padding: 4px 0;
+}
+
+.tb-button {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tool-w);
+  height: var(--tool-h);
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.tb-button svg {
+  display: block;
+  width: var(--tool-icon);
+  height: var(--tool-icon);
+}
+
+.tb-button:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* The latched mode, the toggles and the armed body show the accent and a bar at the rail edge (M-071). */
+
+.tb-button[aria-pressed="true"],
+.tb-button.armed {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tb-button[aria-pressed="true"]::after,
+.tb-button.armed::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: -4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.tb-button:disabled,
+.tb-button[aria-disabled="true"] {
+  background: transparent;
+  color: var(--text-3);
+}
+
+/* Slots 10 to 13 are new in version 2.0. A hairline separates them from slot 9 (M-070). */
+
+.tb-button[data-tool="10"] {
+  margin-top: 5px;
+}
+
+.tb-button[data-tool="10"]::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 6px;
+  right: 6px;
+  height: 1px;
+  background: var(--line);
+}
+
+.tb-sep {
+  flex: none;
+  width: 28px;
+  height: 1px;
+  margin: 2px 0;
+  background: var(--line);
+}
+
+/* The middle column: Form1 above the bar F5 (M-055 to M-057). */
+
+.c-win:where(#form1) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface);
+}
+
+.c-win:where(#form1) > .win-title {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--caption-h);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+.win-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+}
+
+.win-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.win-caption:where(#caption) {
+  flex: none;
+  font-size: var(--fs-title);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.caption-dash {
+  flex: none;
+  color: var(--text-3);
+}
+
+/* The scene name reads as plain text until it is hovered or focused (M-068). */
+
+.scene-name {
+  flex: 0 1 auto;
+  field-sizing: content;
+  min-width: 8ch;
+  max-width: 320px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-dense);
+  text-overflow: ellipsis;
+}
+
+.scene-name:hover,
+.scene-name:focus {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  outline: none;
+}
+
+.caption-spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.c-win:where(#form1) > .win-client {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The menu bar of Form1 (M-056, M-060). */
+
+.menubar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: var(--menu-h);
+  padding: 0 6px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.menu-item {
+  position: relative;
+}
+
+.menu-title {
+  height: 24px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-dense);
+}
+
+.menu-title:hover {
+  background: var(--surface-2);
+}
+
+.menu-title[aria-expanded="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* The mnemonic letters show while the menu bar has the focus or while Alt is held. */
+
+.menubar u {
+  text-decoration: none;
+}
+
+.menubar:focus-within u,
+:root[data-mnemonics] .menubar u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.menu-popup {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 260px;
+  max-width: min(420px, calc(100vw - 16px));
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+/* An entry has an icon column, the caption and the shortcut (M-060). */
+
+.menu-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-2);
+  width: 100%;
+  height: 32px;
+  padding: 0 10px 0 8px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-dense);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.menu-entry > span:not(.menu-shortcut) {
+  grid-row: 1;
+  grid-column: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-entry > svg,
+.menu-entry::before {
+  grid-row: 1;
+  grid-column: 1;
+  justify-self: center;
+}
+
+.menu-entry > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-2);
+}
+
+.menu-shortcut {
+  grid-row: 1;
+  grid-column: 3;
+  padding-left: var(--space-4);
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.menu-entry:hover,
+.menu-entry:focus-visible,
+.menu-entry.submenu:focus-within {
+  background: var(--accent-soft);
+  color: var(--accent);
+  outline: none;
+}
+
+.menu-entry:disabled,
+.menu-entry[aria-disabled="true"] {
+  background: transparent;
+  color: var(--text-3);
+  cursor: default;
+}
+
+/* Check items carry a check mark, radio items a dot (M-060). */
+
+.menu-entry[aria-checked="true"]::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--i-check) center / 16px no-repeat;
+  mask: var(--i-check) center / 16px no-repeat;
+}
+
+.menu-entry[role="menuitemradio"][aria-checked="true"]::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  -webkit-mask: none;
+  mask: none;
+}
+
+.menu-separator,
+.menu-sep {
+  flex: none;
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--line);
+}
+
+/* The submenu Beispiele opens to the right on hover or focus. */
+
+.menu-entry.submenu > .menu-shortcut {
+  width: 28px;
+  color: transparent;
+  overflow: hidden;
+  background: var(--text-2);
+  -webkit-mask: var(--i-chevron-right) right center / 14px no-repeat;
+  mask: var(--i-chevron-right) right center / 14px no-repeat;
+}
+
+.submenu > .submenu-popup {
+  display: none;
+  top: -5px;
+  left: 100%;
+}
+
+.submenu:hover > .submenu-popup,
+.submenu:focus-within > .submenu-popup {
+  display: flex;
+}
+
+.submenu-popup:empty {
+  display: none !important;
+}
+
+/* The four views (M-053, M-054, M-090). */
+
+.views {
+  position: relative;
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--view-bg);
+}
+
+:where(#canvas) {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* A view is transparent so the shared canvas shows through. Its shadow paints the line in the gap. */
+
+.view {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--view-line);
+  cursor: default;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.view:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+:where(body[data-armed]) .view:not([data-view="3"]) {
+  cursor: crosshair;
+}
+
+.view[data-view="3"] {
+  cursor: grab;
+}
+
+.view.dragging {
+  cursor: grabbing;
+}
+
+.view-overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Zoomed_d3 and the enlarged views show one view over the whole area. */
+
+.views.zoomed-d3,
+.views[class*="max-"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+:where(.views.zoomed-d3) .view:not([data-view="3"]),
+:where(.views.max-0) .view:not([data-view="0"]),
+:where(.views.max-1) .view:not([data-view="1"]),
+:where(.views.max-2) .view:not([data-view="2"]),
+:where(.views.max-3) .view:not([data-view="3"]) {
+  display: none;
+}
+
+/* The caption of a view is a pill in its top left corner that fades while the pointer is elsewhere. */
+
+.view-head {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 16px);
+  height: 26px;
+  padding: 0 2px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.view:hover .view-head,
+.view:focus-within .view-head,
+.view:focus .view-head {
+  opacity: 1;
+}
+
+.view-name {
+  flex: none;
+  font-weight: 600;
+}
+
+.view-axes {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-2);
+  text-overflow: ellipsis;
+}
+
+.view-head .icon-button {
+  flex: none;
+  pointer-events: auto;
+}
+
+.view-save {
+  margin-left: 2px;
+}
+
+/* The WebGPU fallback covers the views when the renderer cannot start (M-098). */
+
+.fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  padding: var(--space-5);
+  background: var(--view-bg);
+  text-align: center;
+}
+
+.fallback h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.fallback p {
+  max-width: 460px;
+  margin: 0 auto;
+  color: var(--text-2);
+}
+
+/* Marks, handles and the rubber band, for an overlay drawn with elements instead of the canvas (M-094). */
+
+.mark {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  margin: -7.5px 0 0 -7.5px;
+  color: var(--mark-green);
+  pointer-events: none;
+}
+
+.mark.locked {
+  color: var(--mark-yellow);
+}
+
+.mark.selected {
+  color: var(--mark-red);
+}
+
+.mark::before,
+.mark::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+
+.mark::before {
+  top: 0;
+  left: 7px;
+  width: 1.5px;
+  height: 15px;
+}
+
+.mark::after {
+  top: 7px;
+  left: 0;
+  width: 15px;
+  height: 1.5px;
+}
+
+.handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border: 1px solid var(--surface);
+  background: var(--accent);
+  pointer-events: auto;
+}
+
+.rubber {
+  position: absolute;
+  border: 1px dashed var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  pointer-events: none;
+}
+
+/* The bar F5 under the views: coordinates, 3D zoom, 2D zoom and status (M-160 to M-165). */
+
+.c-bar:where(#f5) {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--f5-h);
+  padding: 0 var(--space-3);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  font-size: var(--fs-dense);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* The generic frame of the panels (M-058). The floated legend becomes an ordinary item of the frame. */
+
+.c-frame {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-2) 10px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.c-frame > legend {
+  float: left;
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 0 0 6px;
+  padding: 0;
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.c-frame > legend + * {
+  clear: both;
+}
+
+.f5-frame {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.f5-frame + .f5-frame::before {
+  content: "";
+  flex: none;
+  width: 1px;
+  height: 20px;
+  margin-right: 6px;
+  background: var(--line);
+}
+
+.f5-frame:where(#f5-frame6) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+:where(#f5) .c-label {
+  flex: none;
+  color: var(--text-2);
+  font-size: var(--fs-dense);
+  font-weight: 600;
+}
+
+.f5-label {
+  margin-left: 4px;
+}
+
+.f5-label:first-child {
+  margin-left: 0;
+}
+
+.f5-label:where(#lx) {
+  color: var(--x);
+}
+
+.f5-label:where(#ly) {
+  color: var(--y);
+}
+
+.f5-label:where(#lz) {
+  color: var(--z);
+}
+
+/* Generic controls shared by both looks (M-358). */
+
+.c-label {
+  color: var(--text-2);
+  font-size: var(--fs-dense);
+}
+
+/* A button is an inline block, so a mnemonic <u> inside its caption stays part of one line of text. */
+
+.c-button {
+  display: inline-block;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-dense);
+  font-weight: 500;
+  line-height: 30px;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.c-button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.c-button:disabled {
+  opacity: 0.45;
+}
+
+.c-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.c-button svg {
+  width: 18px;
+  height: 18px;
+  margin-top: -2px;
+  vertical-align: middle;
+}
+
+.c-button.wide {
+  display: block;
+  width: 100%;
+}
+
+/* The primary button: the default button of a dialog and Einfügen of the tab Körper (M-178). */
+
+.c-button:where(.c-default, .primary, #btn-einf) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.c-button:where(.c-default, .primary, #btn-einf):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 86%, var(--text));
+  background: color-mix(in srgb, var(--accent) 86%, var(--text));
+}
+
+/* The small square buttons of F5 and F9 (M-162, M-184). */
+
+.c-mini {
+  flex: none;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--radius-s);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.icon-button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.icon-button svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.icon-button:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.icon-button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.icon-button:disabled {
+  background: transparent;
+  opacity: 0.4;
+}
+
+.icon-button.small {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+}
+
+.icon-button.small svg {
+  width: 16px;
+  height: 16px;
+}
+
+.c-text {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-dense);
+}
+
+.c-text:focus,
+.c-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  outline: none;
+}
+
+.c-text:disabled {
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+.c-select,
+.screen-client select {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 0 28px 0 var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-2) 50%),
+    linear-gradient(135deg, var(--text-2) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--text);
+  font-size: var(--fs-dense);
+  appearance: none;
+}
+
+/* The LCD fields: a dark field with coloured digits in both themes (M-029, M-030, M-156, M-161). */
+
+.c-lcd {
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--lcd-bg) 75%, var(--line-strong));
+  border-radius: var(--radius-s);
+  background-color: var(--lcd-bg);
+  color: var(--lcd-y);
+  font: 600 var(--fs-lcd) / 1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  caret-color: #ffffff;
+}
+
+.c-lcd.free {
+  color: var(--lock-free);
+}
+
+.c-lcd.locked {
+  padding-right: 20px;
+  background-image: var(--i-lock);
+  background-position: right 5px center;
+  background-size: 12px;
+  background-repeat: no-repeat;
+  color: var(--lock-locked);
+}
+
+.c-lcd.rot {
+  color: var(--lcd-rot);
+}
+
+.c-lcd:focus {
+  border-color: var(--accent);
+}
+
+.c-lcd:where(#tx, #ty, #tz) {
+  flex: none;
+  width: 58px;
+}
+
+.c-lcd:where(#tx) {
+  color: var(--lcd-x);
+}
+
+.c-lcd:where(#ty) {
+  color: var(--lcd-y);
+}
+
+.c-lcd:where(#tz) {
+  color: var(--lcd-z);
+}
+
+/* The blue fields of F5: the 2D zoom and the status line (M-163). */
+
+.c-blue {
+  height: 24px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--fs-dense);
+}
+
+.c-blue:where(#tzoom) {
+  flex: none;
+  width: 64px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.c-blue:where(#tstatus) {
+  display: block;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 48px;
+  padding: 0 var(--space-2);
+  line-height: 24px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c-label:where(#label1-f5) {
+  min-width: 3.5em;
+  text-align: right;
+}
+
+/* Lists: OBJEKTE, the pictures and the lists of the dialogs (M-173, M-183). */
+
+.c-list {
+  min-height: 0;
+  padding: 2px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.c-list:focus-visible {
+  outline-offset: 1px;
+}
+
+.c-list-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--row-h);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  border-radius: 3px;
+  font-size: var(--fs-dense);
+  white-space: pre;
+  cursor: default;
+}
+
+.c-list-row:hover {
+  background: var(--surface-2);
+}
+
+.c-list-row[aria-selected="true"] {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+  color: var(--accent);
+}
+
+.c-list-row[aria-disabled="true"] {
+  color: var(--text-2);
+}
+
+.row-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-2);
+}
+
+.row-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.c-list-row[aria-selected="true"] .row-icon {
+  color: var(--accent);
+}
+
+/* The editable combo box CB1 (M-174). */
+
+.c-combo {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px;
+  height: 30px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+}
+
+.c-combo:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.c-combo-edit {
+  min-width: 0;
+  height: 100%;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-s) 0 0 var(--radius-s);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-ui);
+  font-weight: 600;
+  outline: none;
+}
+
+.c-combo-arrow {
+  position: relative;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  background: transparent;
+  color: var(--text-2);
+}
+
+.c-combo-arrow:empty::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  -webkit-mask: var(--i-chevron-down) center / 16px no-repeat;
+  mask: var(--i-chevron-down) center / 16px no-repeat;
+}
+
+.c-combo-arrow:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.c-combo-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: -1px;
+  right: -1px;
+  z-index: 30;
+  max-height: 300px;
+  padding: 4px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.c-combo-list .c-list-row,
+.open-list .c-list-row {
+  font-family: var(--font);
+}
+
+/* The horizontal scroll bars of the tab Kamera are range inputs (M-185). */
+
+.c-hscroll {
+  width: 100%;
+  min-width: 0;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* The right column: F4 "Eingaben" above F6 "Farben/Texturen" (M-050, M-170). */
+
+.c-win:where(#f4) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.c-win:where(#f4) > .win-client {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.c-win:where(#f6) {
+  flex: none;
+  border-top: 1px solid var(--line);
+}
+
+/* The two rows of tabs read as one 2 by 3 grid with the back row on top (M-170). */
+
+.sstab {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tab-row {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+  margin: 0 var(--space-3);
+  padding: 3px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.tab-row.back {
+  padding-bottom: 1.5px;
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.tab-row.front {
+  margin-bottom: 10px;
+  padding-top: 1.5px;
+  border-top: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.tab {
+  height: 28px;
+  min-width: 0;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-dense);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.tab:hover {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--text);
+}
+
+.tab[aria-selected="true"] {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tab-page {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 0 var(--space-3) var(--space-3);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* Tab Körper: OBJEKTE grows with the column, GEOMETRIEDATEN and the buttons keep their height (M-173 to M-178). */
+
+.c-frame:where(#frame8) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: calc(4 * var(--row-h) + 46px);
+}
+
+.c-list:where(#cb2) {
+  flex: 1 1 auto;
+  min-height: calc(4 * var(--row-h) + 6px);
+  max-height: calc(14 * var(--row-h) + 6px);
+  font-family: var(--mono);
+}
+
+.c-frame:where(#frame1) {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--space-2);
+  row-gap: 0;
+  border-color: var(--geo-line);
+  background: var(--surface-geo);
+}
+
+.geo-label {
+  align-self: end;
+  margin: var(--space-2) 0 3px;
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.t1 {
+  height: 28px;
+}
+
+.geo-hint {
+  margin: var(--space-2) 0 0;
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+/* The rows of GEOMETRIEDATEN. A row with hidden fields keeps the visible ones in their columns (M-175). */
+
+:where(#frame1 > legend) { grid-row: 1; }
+:where(#cb1) { grid-row: 2; grid-column: 1 / -1; }
+:where(#l1-1) { grid-row: 3; grid-column: 1 / -1; }
+:where(#l1-2) { grid-row: 3; grid-column: 2; }
+:where(#l1-3) { grid-row: 3; grid-column: 3; }
+:where(#t1-1) { grid-row: 4; grid-column: 1; }
+:where(#t1-2) { grid-row: 4; grid-column: 2; }
+:where(#t1-3) { grid-row: 4; grid-column: 3; }
+:where(#l1-4) { grid-row: 5; grid-column: 1 / span 2; }
+:where(#l1-5) { grid-row: 5; grid-column: 2; }
+:where(#l1-6) { grid-row: 5; grid-column: 3; }
+:where(#t1-4) { grid-row: 6; grid-column: 1; }
+:where(#t1-5) { grid-row: 6; grid-column: 2; }
+:where(#t1-6) { grid-row: 6; grid-column: 3; }
+:where(#l1-7) { grid-row: 7; grid-column: 1 / -1; }
+:where(#l1-8) { grid-row: 7; grid-column: 2; }
+:where(#l1-9) { grid-row: 7; grid-column: 3; }
+:where(#t1-7) { grid-row: 8; grid-column: 1; }
+:where(#t1-8) { grid-row: 8; grid-column: 2; }
+:where(#t1-9) { grid-row: 8; grid-column: 3; }
+:where(#l1-10) { grid-row: 9; grid-column: 1 / -1; }
+:where(#t1-10) { grid-row: 10; grid-column: 1; }
+:where(#l1-11) { grid-row: 11; grid-column: 1; }
+:where(#t1-11) { grid-row: 11; grid-column: 2 / -1; }
+:where(#l1-12) { grid-row: 12; grid-column: 1; }
+:where(#t1-12) { grid-row: 12; grid-column: 2 / -1; }
+:where(#geo-hint) { grid-row: 13; grid-column: 1 / -1; }
+
+:where(#frame1:has(#l1-6[hidden]) #l1-4) { grid-column: 1 / -1; }
+:where(#frame1:has(#l1-5:not([hidden])) #l1-4) { grid-column: 1; }
+:where(#frame1:has(#l1-2:not([hidden]), #l1-3:not([hidden])) #l1-1) { grid-column: 1; }
+:where(#frame1:has(#l1-8:not([hidden]), #l1-9:not([hidden])) #l1-7) { grid-column: 1; }
+
+/* Name and Gruppe put the caption at the left of the field to keep the frame short (P-257). */
+
+.geo-label:where(#l1-11, #l1-12) {
+  align-self: center;
+  margin: var(--space-2) 0 0;
+}
+
+.t1-name,
+.t1-group {
+  height: 28px;
+  margin-top: var(--space-2);
+}
+
+/* Rows of buttons need no frame of their own in the modern look. */
+
+.c-frame:where(#frame7-0, #frame9-0, #frame9-1, #frame7-1, #frame2-einst) {
+  display: grid;
+  flex: none;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: var(--space-2);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.c-frame:where(#frame7-0, #frame9-0, #frame9-1, #frame7-1, #frame2-einst) > .c-button {
+  padding: 0 4px;
+}
+
+.c-frame:where(#frame2-einst) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: row;
+}
+
+.c-button:where(#bscreen) {
+  grid-column: 1 / -1;
+}
+
+/* Tab Oberfläche: a material swatch and a pointer to F6 (M-180a). */
+
+.surface-swatch {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  margin: var(--space-3) auto 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.85), transparent 45%),
+    var(--surface-2);
+  box-shadow: inset 0 -10px 18px rgb(0 0 0 / 0.18), 0 0 0 1px var(--line);
+}
+
+.surface-hint {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-dense);
+  text-align: center;
+}
+
+/* Tab Ausgabe: the POV text fills the page above the file name and the buttons (M-181). */
+
+.c-frame:where(#frame5) {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 220px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.c-frame:where(#frame5):focus-within {
+  border-color: var(--accent);
+}
+
+.c-multiline {
+  flex: 1 1 auto;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: var(--space-2) 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: 12px / 1.45 var(--mono);
+  white-space: pre;
+  overflow: auto;
+  resize: none;
+}
+
+.c-multiline:focus {
+  box-shadow: none;
+}
+
+.c-text:where(#tfname) {
+  flex: none;
+}
+
+.pov-command {
+  flex: none;
+  margin: 0;
+  padding: 6px var(--space-2);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: 12px / 1.4 var(--mono);
+  word-break: break-all;
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+.pov-command:empty {
+  display: none;
+}
+
+/* Tab Bilder: the list, the path and the buttons, with the button … at the left of the button row (M-183). */
+
+.tab-page[data-page="bilder"] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: minmax(160px, 1fr) auto auto;
+  gap: 10px var(--space-2);
+}
+
+.c-list:where(#file1) {
+  grid-column: 1 / -1;
+}
+
+.c-text:where(#tdatei) {
+  grid-column: 1 / -1;
+}
+
+.c-frame:where(#frame9-1) {
+  grid-row: 3;
+  grid-column: 2;
+}
+
+.cmdia {
+  grid-row: 3;
+  grid-column: 1;
+  width: 32px;
+  padding: 0;
+}
+
+/* Tab Kamera: the note of version 1.3, the four sliders and the buttons (M-185). */
+
+.tab-page[data-page="kamera"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 10px var(--space-2);
+}
+
+.tab-page[data-page="kamera"] > * {
+  grid-column: 1 / -1;
+}
+
+.tab-page[data-page="kamera"] > .c-button {
+  grid-column: auto;
+}
+
+.c-label:where(#label1-kamera) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.c-label:where(#label1-kamera)::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  -webkit-mask: var(--i-info) center / 16px no-repeat;
+  mask: var(--i-info) center / 16px no-repeat;
+}
+
+.c-frame:where(#frame6) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hs-label {
+  min-width: 2.8em;
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.hs-label:where(#lhs-1) {
+  color: var(--x);
+}
+
+.hs-label:where(#lhs-2) {
+  color: var(--y);
+}
+
+.hs-label:where(#lhs-3) {
+  color: var(--z);
+}
+
+.hst {
+  height: 26px;
+  padding: 0 6px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Tab Einstellung: the password with its label at the right, the paths and the buttons (M-187). */
+
+.tab-page[data-page="einstellung"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  align-items: center;
+  gap: 10px var(--space-2);
+}
+
+.tab-page[data-page="einstellung"] > .c-frame {
+  grid-column: 1 / -1;
+}
+
+.c-frame:where(#frame10) {
+  display: grid;
+  row-gap: 3px;
+}
+
+:where(#frame10) > .c-label {
+  margin-top: 5px;
+  font-size: 12px;
+}
+
+:where(#frame10) > legend + .c-label {
+  margin-top: 0;
+}
+
+/* F6 "Farben/Texturen": one row for the texture, one for the colour of the selected body (M-190). */
+
+.c-win:where(#f6) > .win-client {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-3) var(--space-3);
+}
+
+.c-frame:where(#frame11, #frame-farbe) {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+  padding: 7px var(--space-2) 7px 10px;
+}
+
+.c-frame:where(#frame11, #frame-farbe) > legend {
+  grid-column: 1;
+  width: auto;
+  margin: 0;
+}
+
+/* The script paints the frame FARBE in the colour of the body, so its caption sits on a chip. */
+
+.c-frame:where(#frame-farbe) > legend {
+  justify-self: start;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface);
+}
+
+.c-button:where(#bcolor) {
+  width: 100%;
+}
+
+/* Dialogs (M-200). */
+
+.dialog-window {
+  width: min(560px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
+}
+
+.dialog-window::backdrop {
+  background: rgb(0 0 0 / 0.3);
+}
+
+.dialog-window > .win-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3) var(--space-1) var(--space-5);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.dialog-window .win-caption {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialog-window .win-buttons {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.win-buttons > .win-min,
+.win-buttons > .win-max,
+.win-buttons > .win-help {
+  display: none;
+}
+
+.dialog-window .win-close {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+}
+
+.dialog-window .win-close:empty::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  -webkit-mask: var(--i-close) center / 18px no-repeat;
+  mask: var(--i-close) center / 18px no-repeat;
+}
+
+.dialog-window .win-close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.dialog-window > .win-client {
+  padding: var(--space-2) var(--space-5) var(--space-5);
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.dialog-buttons .c-button {
+  min-width: 96px;
+}
+
+/* The message box of Visual Basic, MsgBox (M-201). */
+
+.c-msgbox {
+  width: min(440px, calc(100vw - 32px));
+}
+
+.c-msgbox-body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.c-msgbox-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.c-msgbox-icon:empty {
+  display: none;
+}
+
+.c-msgbox-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.c-msgbox[data-kind="error"] .c-msgbox-icon {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+
+.c-msgbox-text {
+  margin: 8px 0 0;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.c-msgbox-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.c-msgbox-buttons .c-button {
+  min-width: 88px;
+}
+
+/* The colour dialog Farben with the 48 basic colours and 16 custom slots (M-191). */
+
+.dialog-window:where(#farben) {
+  width: fit-content;
+}
+
+.farben-client {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.farben-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.farben-label {
+  margin-top: var(--space-1);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.farben-grund,
+.farben-custom {
+  display: grid;
+  grid-template-columns: repeat(8, 24px);
+  gap: 5px;
+}
+
+.farben-swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+  border-radius: var(--radius-s);
+}
+
+.farben-swatch[aria-selected="true"],
+.farben-swatch[aria-checked="true"] {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+}
+
+.farben-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.farben-buttons .c-button {
+  min-width: 96px;
+}
+
+.farben-full {
+  display: grid;
+  grid-template-columns: 88px 88px 14px;
+  align-content: start;
+  gap: var(--space-2);
+}
+
+:where(#farben-hs) {
+  grid-row: 1;
+  grid-column: 1 / span 2;
+}
+
+:where(#farben-lum) {
+  grid-row: 1;
+  grid-column: 3;
+  width: 14px;
+  height: 128px;
+}
+
+.farben-full canvas {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.farben-preview {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+}
+
+.farben-preview-label {
+  grid-row: 3;
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+
+.farben-num {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.farben-num .c-text {
+  width: 50px;
+  height: 26px;
+  padding: 0 4px;
+}
+
+.farben-num:nth-of-type(1) { grid-row: 4; grid-column: 1; }
+.farben-num:nth-of-type(2) { grid-row: 5; grid-column: 1; }
+.farben-num:nth-of-type(3) { grid-row: 6; grid-column: 1; }
+.farben-num:nth-of-type(4) { grid-row: 4; grid-column: 2 / -1; }
+.farben-num:nth-of-type(5) { grid-row: 5; grid-column: 2 / -1; }
+.farben-num:nth-of-type(6) { grid-row: 6; grid-column: 2 / -1; }
+
+:where(#farben-picker) {
+  grid-row: 7;
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+}
+
+:where(#farben-add) {
+  grid-row: 8;
+  grid-column: 1 / -1;
+}
+
+/* Öffnen, Bildschirmeinstellungen and Hilfe. */
+
+.open-client,
+.screen-client {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.open-list {
+  min-height: 56px;
+  max-height: 180px;
+}
+
+.file-button {
+  cursor: pointer;
+}
+
+.screen-client .c-frame {
+  display: grid;
+  gap: 6px;
+}
+
+.screen-client label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-dense);
+}
+
+.screen-client select {
+  width: auto;
+  min-width: 140px;
+  margin-left: auto;
+}
+
+.dialog-window:where(#help-dialog) {
+  width: min(640px, calc(100vw - 32px));
+}
+
+.help-client h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.help-client p {
+  margin: 0 0 var(--space-2);
+}
+
+.keys {
+  width: 100%;
+  margin: var(--space-3) 0;
+  border-collapse: collapse;
+  font-size: var(--fs-dense);
+}
+
+.keys td {
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.keys td:first-child {
+  width: 30%;
+  padding-right: var(--space-3);
+  font-weight: 600;
+}
+
+kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  font: 11.5px var(--mono);
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-dense);
+}
+
+/* The Dia-Show F9: black over the whole screen, the picture fitted, the buttons bottom right (M-184). */
+
+.f9 {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: grid;
+  place-items: center;
+  background: #000000;
+}
+
+:where(#f9-picture) {
+  max-width: 100vw;
+  max-height: 100vh;
+  max-height: 100dvh;
+  object-fit: contain;
+}
+
+.f9-buttons {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  display: flex;
+  gap: var(--space-2);
+}
+
+.f9 .c-mini {
+  width: 40px;
+  height: 32px;
+  line-height: 30px;
+  border-color: rgb(255 255 255 / 0.3);
+  background: rgb(0 0 0 / 0.45);
+  color: #ffffff;
+}
+
+.f9 .c-mini:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.18);
+}
+
+/* The splash while WebAssembly and WebGPU start (M-203). */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.splash-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(380px, 100%);
+  padding: 32px 40px 28px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+  text-align: center;
+}
+
+.splash-logo {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  color: var(--accent);
+}
+
+.splash-logo svg {
+  width: 64px;
+  height: 64px;
+}
+
+.splash-title {
+  margin: var(--space-3) 0 0;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.splash-version {
+  margin: 2px 0 var(--space-3);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.splash-origin,
+.splash-copyright {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-dense);
+}
+
+.splash-state {
+  position: relative;
+  width: 100%;
+  margin: var(--space-4) 0 0;
+  padding-bottom: 10px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.splash-state::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent) 0 0 / 40% 100% no-repeat, var(--surface-2);
+  animation: splash-progress 1.4s ease-in-out infinite;
+}
+
+@keyframes splash-progress {
+  from {
+    background-position: -40% 0, 0 0;
+  }
+
+  to {
+    background-position: 140% 0, 0 0;
+  }
+}
+
+/* The styled tooltip, positioned by the script (M-205), and the toast (M-202). */
+
+.c-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 280px;
+  padding: 5px var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--f5-h) + var(--space-4));
+  z-index: 960;
+  max-width: calc(100vw - 32px);
+  padding: 9px var(--space-4);
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--surface);
+  box-shadow: var(--shadow-pop);
+  font-size: var(--fs-dense);
+  transform: translateX(-50%);
+}
+
+/* A short window shrinks the rails, so all 22 buttons of F3 and F2 stay visible at 768 pixels height. */
+
+@media (max-height: 860px) and (min-width: 768px) {
+  :root {
+    --tool-h: 32px;
+    --tool-gap: 1px;
+    --tool-icon: 22px;
+    --panel-head-h: 28px;
+  }
+
+  .tab-row.front {
+    margin-bottom: var(--space-2);
+  }
+}
+
+/* From 1024 to 1279 pixels the right column narrows (M-051). */
+
+@media (max-width: 1279px) {
+  :root {
+    --right-w: 268px;
+  }
+
+  .tab-row {
+    margin: 0 var(--space-2);
+  }
+
+  .tab-row.front {
+    margin-bottom: var(--space-2);
+  }
+
+  .tab {
+    font-size: 12.5px;
+  }
+
+  .tab-page {
+    padding: 0 var(--space-2) var(--space-2);
+  }
+
+  :where(.dock-right) .win-title {
+    padding: 0 10px;
+  }
+
+  .c-win:where(#f6) > .win-client {
+    padding: 0 var(--space-2) var(--space-2);
+  }
+
+  .c-frame:where(#frame1) {
+    column-gap: 6px;
+  }
+
+  .c-lcd {
+    padding: 0 5px;
+  }
+
+  .c-bar:where(#f5) {
+    gap: var(--space-2);
+    padding: 0 10px;
+  }
+
+  .f5-frame + .f5-frame::before {
+    margin-right: 2px;
+  }
+
+  .c-lcd:where(#tx, #ty, #tz) {
+    width: 50px;
+  }
+
+  .c-blue:where(#tzoom) {
+    width: 56px;
+  }
+
+  .c-label:where(#label1-f5) {
+    min-width: 0;
+  }
+}
+
+/* Below 1024 pixels the right column becomes a drawer over the views (M-051, M-164). */
+
+@media (max-width: 1023px) {
+  :root {
+    --right-w: 300px;
+  }
+
+  .desktop {
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  }
+
+  .dock-right {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: var(--f5-h);
+    z-index: 40;
+    width: var(--right-w);
+    max-width: 100vw;
+    box-shadow: var(--shadow-pop);
+    transform: translateX(100%);
+    visibility: hidden;
+    transition: transform 160ms ease, visibility 0s linear 160ms;
+  }
+
+  .dock-right[data-open],
+  .dock-right:focus-within {
+    transform: none;
+    visibility: visible;
+    transition: transform 160ms ease;
+  }
+
+  .c-label:where(#label1-f5) {
+    display: none;
+  }
+
+  .c-lcd:where(#tx, #ty, #tz) {
+    width: 50px;
+  }
+}
+
+/* Below 768 pixels the windows stack, edge to edge, and nothing becomes unreachable (M-052). */
+
+@media (max-width: 767px) {
+  .desktop {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .dock-left,
+  .dock-center {
+    display: contents;
+  }
+
+  .c-win:where(#form1) {
+    grid-row: 1;
+    min-height: 360px;
+  }
+
+  .c-win:where(#f3),
+  .c-win:where(#f2) {
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    scrollbar-width: thin;
+  }
+
+  .c-win:where(#f3) {
+    grid-row: 2;
+  }
+
+  .c-win:where(#f2) {
+    grid-row: 3;
+  }
+
+  .c-bar:where(#f5) {
+    grid-row: 4;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    height: auto;
+    min-height: var(--f5-h);
+    padding: 6px var(--space-2);
+  }
+
+  .toolbar {
+    flex-direction: row;
+    width: max-content;
+    padding: 4px;
+  }
+
+  .tb-button[data-tool="10"] {
+    margin: 0 0 0 5px;
+  }
+
+  .tb-button[data-tool="10"]::before {
+    top: 6px;
+    bottom: 6px;
+    left: -4px;
+    right: auto;
+    width: 1px;
+    height: auto;
+  }
+
+  .tb-button[aria-pressed="true"]::after,
+  .tb-button.armed::after {
+    top: auto;
+    bottom: -4px;
+    left: 7px;
+    right: 7px;
+    width: auto;
+    height: 2px;
+  }
+
+  .menubar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--menu-h);
+  }
+
+  .dock-right {
+    bottom: 0;
+    width: 100vw;
+  }
+}
+
+/* Touch screens get larger targets for the small buttons (M-210). */
+
+@media (pointer: coarse) {
+  .c-mini {
+    width: 36px;
+    height: 32px;
+    line-height: 30px;
+  }
+
+  .icon-button.small {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Motion follows the wish of the user (M-042). */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Windows high contrast mode keeps borders and the focus visible (M-043). */
+
+@media (forced-colors: active) {
+  .c-frame,
+  .c-button,
+  .c-text,
+  .c-list,
+  .tab,
+  .tb-button,
+  .view-head {
+    border: 1px solid CanvasText;
+  }
+
+  .tb-button[aria-pressed="true"],
+  .tb-button.armed,
+  .tab[aria-selected="true"],
+  .c-list-row[aria-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}

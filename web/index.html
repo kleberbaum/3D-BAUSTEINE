@@ -1,0 +1,517 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-2.0-only -->
+<!--
+  3D-Bausteine index.html: the page of the CAD program. It holds the six
+  windows of version 1.3 at their places, Form1 with the menu bar and the
+  four views, the tool bar F3, the body bar F2, the register form F4
+  "Eingaben", the bar F5 and the window F6 "Farben/Texturen", and the colour
+  dialog, the Dia-Show F9 and the splash. One DOM serves both looks: the
+  modern look docks the windows, the classic look of version 1.3 floats them.
+-->
+<html lang="de" data-look="modern">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3D-Baukasten</title>
+  <meta name="description" content="3D-Bausteine: Körper modellieren in Grund-, Auf- und Kreuzriss, mit Raytracing im Browser.">
+  <link id="favicon" rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="classic.css">
+  <script>
+    // The look and the theme are set before the first paint, so the page never flashes.
+    try {
+      const look = localStorage.getItem('bausteine.look') === 'classic' ? 'classic' : 'modern';
+      const saved = localStorage.getItem('bausteine.theme');
+      const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.look = look;
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    } catch {
+      document.documentElement.dataset.look = 'modern';
+      document.documentElement.dataset.theme = 'light';
+    }
+  </script>
+</head>
+<body class="c-desktop">
+  <div id="desktop" class="desktop">
+
+    <!-- The left dock: the tool bar F3 above the body bar F2. -->
+    <div class="dock dock-left">
+      <section id="f3" class="c-win tool-window" data-border="tool" aria-label="Werkzeuge">
+        <header class="win-title"><span class="win-caption"></span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
+        <div class="win-client">
+          <div id="tb1" class="toolbar" role="toolbar" aria-orientation="vertical" aria-label="Werkzeuge">
+            <button class="tb-button" type="button" data-tool="1" data-tip="Position" aria-label="Position"></button>
+            <button class="tb-button" type="button" data-tool="2" data-tip="Körper einfügen" aria-label="Körper einfügen"></button>
+            <button class="tb-button" type="button" data-tool="3" data-tip="Bearbeiten" aria-label="Bearbeiten"></button>
+            <button class="tb-button" type="button" data-tool="4" data-tip="Farbe ändern" aria-label="Farbe ändern"></button>
+            <button class="tb-button" type="button" data-tool="5" data-tip="Raytrace" aria-label="Raytrace" aria-pressed="false"></button>
+            <button class="tb-button" type="button" data-tool="6" data-tip="3D-Zoom" aria-label="3D-Zoom" aria-pressed="false"></button>
+            <button class="tb-button" type="button" data-tool="7" data-tip="Ausgabe" aria-label="Ausgabe"></button>
+            <button class="tb-button" type="button" data-tool="8" data-tip="Beenden" aria-label="Beenden"></button>
+            <button class="tb-button" type="button" data-tool="9" data-tip="Dia-Show" aria-label="Dia-Show"></button>
+            <button class="tb-button" type="button" data-tool="10" data-tip="Rückgängig (Strg+Z)" aria-label="Rückgängig"></button>
+            <button class="tb-button" type="button" data-tool="11" data-tip="Wiederholen (Strg+Y)" aria-label="Wiederholen"></button>
+            <button class="tb-button" type="button" data-tool="12" data-tip="Darstellung: Modern oder Klassisch" aria-label="Darstellung umschalten"></button>
+            <button class="tb-button" type="button" data-tool="13" data-tip="Hilfe (?)" aria-label="Hilfe"></button>
+          </div>
+        </div>
+      </section>
+
+      <section id="f2" class="c-win tool-window" data-border="tool" aria-label="Körper">
+        <header class="win-title"><span class="win-caption" data-classic-caption="3D">Körper</span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
+        <div class="win-client">
+          <div id="tb2" class="toolbar" role="toolbar" aria-orientation="vertical" aria-label="Körperleiste">
+            <button class="tb-button" type="button" data-body="Kugel" data-tip="Kugel" aria-label="Kugel"></button>
+            <button class="tb-button" type="button" data-body="Kegel" data-tip="Kegel" aria-label="Kegel"></button>
+            <button class="tb-button" type="button" data-body="Zylinder" data-tip="Zylinder" aria-label="Zylinder"></button>
+            <button class="tb-button" type="button" data-body="Würfel" data-tip="Würfel" aria-label="Würfel"></button>
+            <button class="tb-button" type="button" data-body="Quader" data-tip="Quader" aria-label="Quader"></button>
+            <button class="tb-button" type="button" data-body="Pyramide" data-tip="Pyramide" aria-label="Pyramide"></button>
+            <button class="tb-button" type="button" data-body="Prisma" data-tip="Prisma" aria-label="Prisma"></button>
+            <button class="tb-button" type="button" data-body="Disc" data-tip="Disc" aria-label="Disc"></button>
+            <button class="tb-button" type="button" data-body="Ebene" data-tip="Ebene" aria-label="Ebene"></button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- The centre dock: Form1 with the menu bar and the views, the bar F5 under it. -->
+    <div class="dock dock-center">
+      <section id="form1" class="c-win main-window active" data-border="normal" aria-label="3D-Baukasten">
+        <header class="win-title">
+          <span class="win-icon" data-icon="app-16" aria-hidden="true"></span>
+          <span id="caption" class="win-caption">3D-Baukasten</span>
+          <span class="caption-dash modern-only" aria-hidden="true">–</span>
+          <input id="scene-name" class="scene-name modern-only" type="text" spellcheck="false" maxlength="60" aria-label="Name der Szene">
+          <span class="caption-spacer"></span>
+          <button id="look" class="icon-button modern-only" type="button" data-icon="tool-12" title="Darstellung: Klassisch wie Version 1.3"></button>
+          <button id="theme" class="icon-button modern-only" type="button" data-icon="moon" title="Hell oder dunkel"></button>
+          <button id="toggle-right" class="icon-button modern-only" type="button" data-icon="tool-2" title="Eingaben und Farben zeigen" aria-expanded="false"></button>
+          <span class="win-buttons"><button class="win-min" type="button" aria-label="Minimieren" tabindex="-1"></button><button class="win-max" type="button" aria-label="Maximieren" tabindex="-1"></button><button class="win-close" type="button" aria-label="Beenden"></button></span>
+        </header>
+
+        <nav id="menubar" class="menubar" role="menubar" aria-label="Menü">
+          <div class="menu-item" data-menu="datei">
+            <button class="menu-title" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" accesskey="d"><u>D</u>atei</button>
+            <div class="menu-popup" role="menu" hidden>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="neu"><span><u>N</u>eu</span><span class="menu-shortcut">Strg+N</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="oeffnen"><span>Ö<u>f</u>fnen …</span><span class="menu-shortcut">Strg+O</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="speichern"><span><u>S</u>peichern</span><span class="menu-shortcut">Strg+S</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="speichern-unter"><span>Speichern unter …</span><span class="menu-shortcut">Strg+Umschalt+S</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="schliessen"><span>Schließen</span></button>
+              <div class="menu-separator modern-only" role="separator"></div>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="umbenennen"><span>Umbenennen …</span></button>
+              <div class="menu-entry submenu" role="menuitem" aria-haspopup="true" data-entry="beispiele"><span>Beispiele</span><span class="menu-shortcut">▸</span>
+                <div id="menu-examples" class="menu-popup submenu-popup" role="menu"></div>
+              </div>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="link"><span>Link kopieren</span></button>
+              <div class="menu-separator modern-only" role="separator"></div>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="beenden"><span><u>B</u>eenden</span></button>
+            </div>
+          </div>
+          <div class="menu-item" data-menu="bearbeiten">
+            <button class="menu-title" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" accesskey="b"><u>B</u>earbeiten</button>
+            <div class="menu-popup" role="menu" hidden>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="rueckgaengig"><span>Rückgängig</span><span class="menu-shortcut">Strg+Z</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="wiederholen"><span>Wiederholen</span><span class="menu-shortcut">Strg+Y</span></button>
+              <div class="menu-separator" role="separator"></div>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="verdoppeln"><span>Verdoppeln</span><span class="menu-shortcut">Strg+D</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="loeschen"><span>Löschen</span><span class="menu-shortcut">Entf</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="nichts-waehlen"><span>Auswahl aufheben</span><span class="menu-shortcut">Esc</span></button>
+              <div class="menu-separator" role="separator"></div>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="pov-kopieren"><span>POV-Text kopieren</span></button>
+            </div>
+          </div>
+          <div class="menu-item" data-menu="objekte">
+            <button class="menu-title" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" accesskey="o"><u>O</u>bjekte</button>
+            <div class="menu-popup" role="menu" hidden>
+              <button class="menu-entry" type="button" role="menuitem" data-body="Kugel"><span>Kugel</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="Kegel"><span>Kegel</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="Zylinder"><span>Zylinder</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="Würfel"><span>Würfel</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="Quader"><span>Quader</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="Pyramide"><span>Pyramide</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="Prisma"><span>Prisma</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="Disc"><span>Disc</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="Ebene"><span>Ebene</span></button>
+              <div class="menu-separator" role="separator"></div>
+              <button class="menu-entry" type="button" role="menuitem" data-body="CSG-Vereinigung"><span>CSG-Vereinigung</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="CSG-Differenz"><span>CSG-Differenz</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="CSG-Durchschnitt"><span>CSG-Durchschnitt</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="CSG-Summe"><span>CSG-Summe</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="CSG-Ende"><span>CSG-Ende</span></button>
+              <div class="menu-separator" role="separator"></div>
+              <button class="menu-entry" type="button" role="menuitem" data-body="#Neu"><span>#Neu</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-body="Neu_Ende"><span>Neu_Ende</span></button>
+            </div>
+          </div>
+          <div class="menu-item" data-menu="ansicht">
+            <button class="menu-title" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" accesskey="a"><u>A</u>nsicht</button>
+            <div class="menu-popup" role="menu" hidden>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="zoom2d-in"><span>2D hineinzoomen</span><span class="menu-shortcut">+</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="zoom2d-out"><span>2D herauszoomen</span><span class="menu-shortcut">−</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="zoom3d-in"><span>3D hineinzoomen</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="zoom3d-out"><span>3D herauszoomen</span></button>
+              <button class="menu-entry" type="button" role="menuitemcheckbox" aria-checked="false" data-entry="zoomed-d3"><span>3D über alle vier Felder</span><span class="menu-shortcut">4</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="fit"><span>Alles zeigen</span><span class="menu-shortcut">F</span></button>
+              <button class="menu-entry" type="button" role="menuitemcheckbox" aria-checked="false" data-entry="raytrace"><span>Raytracing</span><span class="menu-shortcut">R</span></button>
+              <div class="menu-separator" role="separator"></div>
+              <button class="menu-entry" type="button" role="menuitemradio" aria-checked="true" data-entry="look-modern"><span>Darstellung: Modern</span></button>
+              <button class="menu-entry" type="button" role="menuitemradio" aria-checked="false" data-entry="look-classic"><span>Darstellung: Klassisch (1.3)</span></button>
+              <button class="menu-entry" type="button" role="menuitemcheckbox" aria-checked="false" data-entry="dark"><span>Dunkles Erscheinungsbild</span></button>
+              <button class="menu-entry" type="button" role="menuitemcheckbox" aria-checked="false" data-entry="inverted"><span>Invertiert (Druck)</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="bildschirm"><span>Bildschirmeinstellungen …</span></button>
+              <div class="menu-separator" role="separator"></div>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="bild-speichern"><span>Bild speichern</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="fenster-anordnen"><span>Fenster anordnen</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="fenster-zeigen"><span>Alle Fenster zeigen</span></button>
+            </div>
+          </div>
+          <div class="menu-item" data-menu="hilfe">
+            <button class="menu-title" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false" accesskey="h"><u>H</u>ilfe</button>
+            <div class="menu-popup" role="menu" hidden>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="hilfe"><span>Hilfe</span><span class="menu-shortcut">?</span></button>
+              <button class="menu-entry" type="button" role="menuitem" data-entry="info"><span>Über 3D-Bausteine</span></button>
+            </div>
+          </div>
+        </nav>
+
+        <div class="win-client">
+          <section id="views" class="views" aria-label="Ansichten">
+            <canvas id="canvas"></canvas>
+            <div class="view" data-view="1" aria-label="Kreuzriss">
+              <div class="view-head"><span class="view-name">Kreuzriss</span><span class="view-axes">x ← · z ↑</span><button class="view-save icon-button small" type="button" data-icon="camera" title="Bild speichern"></button><button class="view-max icon-button small" type="button" data-icon="expand" title="Vergrößern"></button></div>
+              <canvas class="view-overlay"></canvas>
+            </div>
+            <div class="view" data-view="0" aria-label="Aufriss">
+              <div class="view-head"><span class="view-name">Aufriss</span><span class="view-axes">y → · z ↑</span><button class="view-save icon-button small" type="button" data-icon="camera" title="Bild speichern"></button><button class="view-max icon-button small" type="button" data-icon="expand" title="Vergrößern"></button></div>
+              <canvas class="view-overlay"></canvas>
+            </div>
+            <div class="view" data-view="3" aria-label="Schrägriss">
+              <div class="view-head"><span class="view-name">Schrägriss</span><span class="view-axes" id="oblique-mode">Drehen: ziehen · Zoom: Klick oder Mausrad</span><button class="view-save icon-button small" type="button" data-icon="camera" title="Bild speichern"></button><button class="view-max icon-button small" type="button" data-icon="expand" title="Vergrößern"></button></div>
+              <canvas class="view-overlay"></canvas>
+            </div>
+            <div class="view" data-view="2" aria-label="Grundriss">
+              <div class="view-head"><span class="view-name">Grundriss</span><span class="view-axes">y → · x ↓</span><button class="view-save icon-button small" type="button" data-icon="camera" title="Bild speichern"></button><button class="view-max icon-button small" type="button" data-icon="expand" title="Vergrößern"></button></div>
+              <canvas class="view-overlay"></canvas>
+            </div>
+            <div id="fallback" class="fallback" hidden>
+              <h2>WebGPU ist hier nicht verfügbar</h2>
+              <p id="fallback-text">3D-Bausteine zeichnet mit WebGPU. Ein aktueller Chrome, Edge, Firefox oder Safari zeigt die Ansichten.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- F5: the coordinates, the zoom and the status, borderless under the views. -->
+      <section id="f5" class="c-bar" aria-label="Koordinaten">
+        <fieldset id="f5-frame2" class="c-frame f5-frame">
+          <label id="lx" class="c-label f5-label" for="tx">x</label><input id="tx" class="c-text c-lcd" type="text" readonly tabindex="-1" aria-label="x">
+          <label id="ly" class="c-label f5-label" for="ty">y</label><input id="ty" class="c-text c-lcd" type="text" readonly tabindex="-1" aria-label="y">
+          <label id="lz" class="c-label f5-label" for="tz">z</label><input id="tz" class="c-text c-lcd" type="text" readonly tabindex="-1" aria-label="z">
+        </fieldset>
+        <fieldset id="f5-frame1" class="c-frame f5-frame">
+          <span id="label3-1" class="c-label">3D</span>
+          <button id="d3-zoomin" class="c-button c-mini" type="button" title="3D hineinzoomen">&lt;</button>
+          <button id="d3-zoomout" class="c-button c-mini" type="button" title="3D herauszoomen">&gt;</button>
+        </fieldset>
+        <fieldset id="f5-frame6" class="c-frame f5-frame">
+          <span id="label2" class="c-label">2D</span>
+          <input id="tzoom" class="c-text c-blue" type="text" readonly tabindex="-1" aria-label="2D-Zoom">
+          <button id="d2-zoomin" class="c-button c-mini" type="button" title="2D hineinzoomen">&lt;</button>
+          <button id="d2-zoomout" class="c-button c-mini" type="button" title="2D herauszoomen">&gt;</button>
+          <output id="tstatus" class="c-text c-blue" aria-live="polite"></output>
+          <span id="label1-f5" class="c-label" title="Riss unter dem Zeiger"></span>
+        </fieldset>
+      </section>
+    </div>
+
+    <!-- The right dock: the register form F4 above the window F6. -->
+    <div class="dock dock-right">
+      <section id="f4" class="c-win tool-window" data-border="tool" aria-label="Eingaben">
+        <header class="win-title"><span class="win-caption">Eingaben</span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
+        <div class="win-client">
+          <div id="sstab1" class="sstab">
+            <div class="tab-row back" role="tablist" aria-label="Register">
+              <button class="tab" type="button" role="tab" data-tab="bilder" aria-selected="false">Bilder</button>
+              <button class="tab" type="button" role="tab" data-tab="kamera" aria-selected="false">Kamera</button>
+              <button class="tab" type="button" role="tab" data-tab="einstellung" aria-selected="false">Einstellung</button>
+            </div>
+            <div class="tab-row front" role="tablist" aria-label="Register">
+              <button class="tab" type="button" role="tab" data-tab="koerper" aria-selected="true">Körper</button>
+              <button class="tab" type="button" role="tab" data-tab="oberflaeche" aria-selected="false">Oberfläche</button>
+              <button class="tab" type="button" role="tab" data-tab="ausgabe" aria-selected="false">Ausgabe</button>
+            </div>
+
+            <!-- Tab 0 "Körper": the list OBJEKTE and the input mask GEOMETRIEDATEN. -->
+            <section class="tab-page" data-page="koerper" role="tabpanel">
+              <fieldset id="frame8" class="c-frame">
+                <legend>OBJEKTE:</legend>
+                <div id="cb2" class="c-list" role="listbox" tabindex="0" aria-label="Objekte"></div>
+              </fieldset>
+              <fieldset id="frame1" class="c-frame">
+                <legend>GEOMETRIEDATEN:</legend>
+                <div id="cb1" class="c-combo">
+                  <input id="cb1-edit" class="c-combo-edit" type="text" spellcheck="false" autocomplete="off" aria-label="Körper">
+                  <button class="c-combo-arrow" type="button" tabindex="-1" aria-label="Liste öffnen"></button>
+                  <div class="c-combo-list" role="listbox" hidden></div>
+                </div>
+                <span id="l1-1" class="c-label geo-label"></span>
+                <span id="l1-2" class="c-label geo-label" hidden></span>
+                <span id="l1-3" class="c-label geo-label" hidden></span>
+                <input id="t1-1" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="x">
+                <input id="t1-2" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="y">
+                <input id="t1-3" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="z">
+                <span id="l1-4" class="c-label geo-label"></span>
+                <span id="l1-5" class="c-label geo-label" hidden></span>
+                <span id="l1-6" class="c-label geo-label"></span>
+                <input id="t1-4" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="Maß x">
+                <input id="t1-5" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="Maß y">
+                <input id="t1-6" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="Maß z">
+                <span id="l1-7" class="c-label geo-label">Drehung um X,Y,Z - Achse</span>
+                <span id="l1-8" class="c-label geo-label" hidden></span>
+                <span id="l1-9" class="c-label geo-label" hidden></span>
+                <input id="t1-7" class="c-text c-lcd t1 rot" type="text" inputmode="decimal" aria-label="Drehung x">
+                <input id="t1-8" class="c-text c-lcd t1 rot" type="text" inputmode="decimal" aria-label="Drehung y">
+                <input id="t1-9" class="c-text c-lcd t1 rot" type="text" inputmode="decimal" aria-label="Drehung z">
+                <span id="l1-10" class="c-label geo-label" hidden>innerer Radius</span>
+                <input id="t1-10" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="innerer Radius" hidden>
+                <span id="l1-11" class="c-label geo-label">Name</span>
+                <input id="t1-11" class="c-text t1-name" type="text" maxlength="60" spellcheck="false" aria-label="Name">
+                <span id="l1-12" class="c-label geo-label">Gruppe</span>
+                <select id="t1-12" class="c-select t1-group" aria-label="Gruppe"></select>
+                <p id="geo-hint" class="geo-hint" hidden></p>
+              </fieldset>
+              <fieldset id="frame7-0" class="c-frame">
+                <button id="btn-einf" class="c-button" type="button">Einfügen</button>
+                <button id="btn-change" class="c-button" type="button">Ändern</button>
+                <button id="btn-clear" class="c-button" type="button">Löschen</button>
+              </fieldset>
+            </section>
+
+            <!-- Tab 1 "Oberfläche": empty in version 1.3, colour and texture live in F6. -->
+            <section class="tab-page" data-page="oberflaeche" role="tabpanel" hidden>
+              <div id="surface-swatch" class="surface-swatch modern-only" aria-hidden="true"></div>
+              <p class="surface-hint">Farbe und Textur: Fenster „Farben/Texturen“ unter diesem Fenster.</p>
+            </section>
+
+            <!-- Tab 2 "Ausgabe": the text for POV-Ray, Übersetzen and Ausgeben. -->
+            <section class="tab-page" data-page="ausgabe" role="tabpanel" hidden>
+              <fieldset id="frame5" class="c-frame">
+                <textarea id="text1" class="c-text c-multiline" spellcheck="false" wrap="off" aria-label="POV-Text"></textarea>
+              </fieldset>
+              <textarea id="t-incl" hidden>#include "colors.inc"
+#include "textures.inc"
+#include "shapes.inc"</textarea>
+              <input id="tfname" class="c-text" type="text" spellcheck="false" aria-label="Dateiname der Ausgabe">
+              <fieldset id="frame9-0" class="c-frame">
+                <button id="bpov-comp" class="c-button" type="button">Übersetzen</button>
+                <button id="bpov-save" class="c-button" type="button" disabled>Ausgeben</button>
+              </fieldset>
+              <p id="pov-command" class="pov-command" title="Die Befehlszeile, mit der Version 1.3 POV-Ray startet"></p>
+            </section>
+
+            <!-- Tab 3 "Bilder": the pictures of the Dia-Show. -->
+            <section class="tab-page" data-page="bilder" role="tabpanel" hidden>
+              <div id="file1" class="c-list" role="listbox" tabindex="0" aria-label="Bilder"></div>
+              <input id="tdatei" class="c-text" type="text" readonly aria-label="Datei">
+              <fieldset id="frame9-1" class="c-frame">
+                <button id="bbild-anz" class="c-button" type="button">Anzeigen</button>
+                <button id="bbild-beenden" class="c-button" type="button">Beenden</button>
+              </fieldset>
+              <button id="cmdia" class="c-button cmdia" type="button" title="Bild hinzufügen">…</button>
+              <input id="cmdia-file" type="file" accept="image/*" multiple hidden>
+            </section>
+
+            <!-- Tab 4 "Kamera": the turn of the oblique view, noch in der Testphase. -->
+            <section class="tab-page" data-page="kamera" role="tabpanel" hidden>
+              <p id="label1-kamera" class="c-label" title="So steht es in Version 1.3">noch in der Testphase!!</p>
+              <fieldset id="frame6" class="c-frame">
+                <legend data-classic-caption="Frame6">Drehung und Zoom</legend>
+                <label id="lhs-4" class="c-label hs-label" for="hs-4">Zoom</label>
+                <input id="hs-4" class="c-hscroll" type="range" min="50" max="500" step="1" value="100" aria-label="3D-Zoom in Prozent">
+                <input id="hst-4" class="c-text hst" type="text" inputmode="numeric" aria-label="3D-Zoom">
+                <label id="lhs-1" class="c-label hs-label" for="hs-1">x</label>
+                <input id="hs-1" class="c-hscroll" type="range" min="-360" max="360" step="1" value="0" aria-label="Drehung um x">
+                <input id="hst-1" class="c-text hst" type="text" inputmode="numeric" aria-label="Drehung um x in Grad">
+                <label id="lhs-2" class="c-label hs-label" for="hs-2">y</label>
+                <input id="hs-2" class="c-hscroll" type="range" min="-360" max="360" step="1" value="0" aria-label="Drehung um y">
+                <input id="hst-2" class="c-text hst" type="text" inputmode="numeric" aria-label="Drehung um y in Grad">
+                <label id="lhs-3" class="c-label hs-label" for="hs-3">z</label>
+                <input id="hs-3" class="c-hscroll" type="range" min="-360" max="360" step="1" value="0" aria-label="Drehung um z">
+                <input id="hst-3" class="c-text hst" type="text" inputmode="numeric" aria-label="Drehung um z in Grad">
+              </fieldset>
+              <button id="start" class="c-button" type="button" data-classic-caption="Command1">Start</button>
+              <button id="command2" class="c-button" type="button" data-classic-caption="Command2">Stopp</button>
+              <fieldset id="frame7-1" class="c-frame">
+                <button id="btn1-1" class="c-button" type="button" title="Die Kamera des Schrägrisses für die Ausgabe übernehmen">Einfügen</button>
+                <button id="btn2-1" class="c-button" type="button" title="Die Kamera der Ausgabe zurücksetzen">Löschen</button>
+              </fieldset>
+            </section>
+
+            <!-- Tab 5 "Einstellung": the paths behind the password of version 1.3. -->
+            <section class="tab-page" data-page="einstellung" role="tabpanel" hidden>
+              <input id="tpasswd" class="c-text" type="password" autocomplete="off" aria-label="Passwort">
+              <label id="lpasswd" class="c-label" for="tpasswd">Passwort</label>
+              <fieldset id="frame10" class="c-frame">
+                <legend>Dateiverwaltung:</legend>
+                <label id="lhome-0" class="c-label" for="tbau-home">Stammverzeichnis 3D-Baukasten:</label>
+                <input id="tbau-home" class="c-text" type="text" spellcheck="false" disabled>
+                <label id="lhome-1" class="c-label" for="tpov-home">Stammverzeichnis POV:</label>
+                <input id="tpov-home" class="c-text" type="text" spellcheck="false" disabled>
+                <label id="lhome-2" class="c-label" for="tbsp-home">Stammverzeichnis POV-Bsp:</label>
+                <input id="tbsp-home" class="c-text" type="text" spellcheck="false" disabled>
+                <label id="lhome-3" class="c-label" for="tbsp-def">StandardName POV-Ausgabe:</label>
+                <input id="tbsp-def" class="c-text" type="text" spellcheck="false" disabled>
+              </fieldset>
+              <fieldset id="frame2-einst" class="c-frame">
+                <button id="bscreen" class="c-button" type="button">Bildschirmeinstellungen</button>
+                <button id="bdatei-change" class="c-button" type="button" disabled>Übernehmen</button>
+                <button id="bdatei-def" class="c-button" type="button" disabled>Standard</button>
+              </fieldset>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section id="f6" class="c-win tool-window" data-border="tool" aria-label="Farben/Texturen">
+        <header class="win-title"><span class="win-caption">Farben/Texturen</span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
+        <div class="win-client">
+          <fieldset id="frame11" class="c-frame">
+            <legend>TEXTUR</legend>
+            <select id="cb3" class="c-select" title="Textur auswählen" aria-label="Textur"><option value="">Keine</option></select>
+          </fieldset>
+          <fieldset id="frame-farbe" class="c-frame">
+            <legend>FARBE</legend>
+            <button id="bcolor" class="c-button" type="button">Farbe</button>
+          </fieldset>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- The colour dialog of Windows, ChooseColor, which F6 opens with "Farbe". -->
+  <dialog id="farben" class="c-win dialog-window" data-border="dialog" aria-label="Farben">
+    <header class="win-title"><span class="win-caption">Farben</span><span class="win-buttons"><button class="win-help" type="button" aria-label="Hilfe" tabindex="-1"></button><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
+    <div class="win-client farben-client">
+      <div class="farben-left">
+        <span class="c-label farben-label"><u>G</u>rundfarben:</span>
+        <div class="farben-grund" role="listbox" aria-label="Grundfarben"></div>
+        <span class="c-label farben-label"><u>B</u>enutzerdefinierte Farben:</span>
+        <div class="farben-custom" role="listbox" aria-label="Benutzerdefinierte Farben"></div>
+        <button id="farben-define" class="c-button wide" type="button">Farben <u>d</u>efinieren &gt;&gt;</button>
+        <div class="farben-buttons">
+          <button id="farben-ok" class="c-button c-default" type="button" autofocus>OK</button>
+          <button id="farben-cancel" class="c-button" type="button">Abbrechen</button>
+        </div>
+      </div>
+      <div class="farben-full" hidden>
+        <canvas id="farben-hs" width="176" height="128" aria-label="Farbton und Sättigung"></canvas>
+        <canvas id="farben-lum" width="10" height="128" aria-label="Helligkeit"></canvas>
+        <div id="farben-preview" class="farben-preview" aria-label="Farbe"></div>
+        <span class="c-label farben-preview-label">Farbe|Basis</span>
+        <label class="farben-num">Farbton:<input id="farben-h" class="c-text" type="number" min="0" max="239"></label>
+        <label class="farben-num">Sätt.:<input id="farben-s" class="c-text" type="number" min="0" max="240"></label>
+        <label class="farben-num">Hell.:<input id="farben-l" class="c-text" type="number" min="0" max="240"></label>
+        <label class="farben-num">Rot:<input id="farben-r" class="c-text" type="number" min="0" max="255"></label>
+        <label class="farben-num">Grün:<input id="farben-g" class="c-text" type="number" min="0" max="255"></label>
+        <label class="farben-num">Blau:<input id="farben-b" class="c-text" type="number" min="0" max="255"></label>
+        <input id="farben-picker" class="modern-only" type="color" aria-label="Freie Farbe">
+        <button id="farben-add" class="c-button wide" type="button">Farben hinzufügen</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- The message box of Visual Basic, MsgBox. -->
+  <dialog id="msgbox" class="c-win c-msgbox dialog-window" data-border="dialog">
+    <header class="win-title"><span class="win-caption" id="msgbox-title"></span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
+    <div class="win-client">
+      <div class="c-msgbox-body"><span class="c-msgbox-icon" aria-hidden="true"></span><p class="c-msgbox-text" id="msgbox-text"></p></div>
+      <div class="c-msgbox-buttons" id="msgbox-buttons"></div>
+    </div>
+  </dialog>
+
+  <!-- Öffnen: a file, an example or a scene the browser keeps. -->
+  <dialog id="open-dialog" class="c-win dialog-window" data-border="dialog" aria-label="Öffnen">
+    <header class="win-title"><span class="win-caption">Öffnen</span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
+    <div class="win-client open-client">
+      <fieldset class="c-frame"><legend>Datei</legend>
+        <label class="c-button file-button">Szenendatei wählen …<input id="open-file" type="file" accept=".json,.bausteine.json,application/json" hidden></label>
+      </fieldset>
+      <fieldset class="c-frame"><legend>Beispiele</legend><div id="open-examples" class="c-list open-list" role="listbox"></div></fieldset>
+      <fieldset class="c-frame"><legend>Szenen im Browser</legend><div id="open-scenes" class="c-list open-list" role="listbox"></div></fieldset>
+      <div class="dialog-buttons"><button class="c-button" type="button" data-close>Abbrechen</button></div>
+    </div>
+  </dialog>
+
+  <!-- Bildschirmeinstellungen: the look and the display of version 2.0. -->
+  <dialog id="screen-dialog" class="c-win dialog-window" data-border="dialog" aria-label="Bildschirmeinstellungen">
+    <header class="win-title"><span class="win-caption">Bildschirmeinstellungen</span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
+    <form class="win-client screen-client" method="dialog">
+      <fieldset class="c-frame"><legend>Darstellung</legend>
+        <label><input type="radio" name="look" value="modern"> Modern</label>
+        <label><input type="radio" name="look" value="classic"> Klassisch, wie Version 1.3</label>
+        <label class="modern-row"><input type="checkbox" name="dark"> Dunkles Erscheinungsbild</label>
+        <label><input type="checkbox" name="inverted"> Risse invertiert, schwarz auf weiß (Druck)</label>
+      </fieldset>
+      <fieldset class="c-frame"><legend>Virtueller Bildschirm (klassisch)</legend>
+        <label><input type="radio" name="screen" value="window"> Fenster des Browsers</label>
+        <label><input type="radio" name="screen" value="800x600"> 800 × 600</label>
+        <label><input type="radio" name="screen" value="1024x768"> 1024 × 768</label>
+        <label><input type="radio" name="screen" value="1280x1024"> 1280 × 1024</label>
+      </fieldset>
+      <fieldset class="c-frame"><legend>Raster und Fangen</legend>
+        <label>Fangraster <select name="snap"><option value="1">1</option><option value="0.5">0,5</option><option value="0.1">0,1</option><option value="0">aus</option></select></label>
+        <label>Rahmen GEOMETRIEDATEN <select name="geo"><option value="#008080">#008080 (Diplomarbeit)</option><option value="#00c0c0">#00C0C0 (F4.frm)</option></select></label>
+      </fieldset>
+      <div class="dialog-buttons"><button class="c-button c-default" value="ok" autofocus>OK</button><button class="c-button" value="cancel" formnovalidate>Abbrechen</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="help-dialog" class="c-win dialog-window" data-border="dialog" aria-label="Hilfe">
+    <header class="win-title"><span class="win-caption">Hilfe</span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
+    <div class="win-client help-client">
+      <h2>3D-Bausteine</h2>
+      <p>Szenen aus geometrischen Grundkörpern bauen, in den zugeordneten Normalrissen des GZ-Unterrichts sehen und im Browser fotorealistisch berechnen lassen. Alle Knöpfe von Version 1.3 stehen an ihrem alten Platz.</p>
+      <table class="keys">
+        <tr><td>Körper einfügen</td><td>Werkzeug „Körper einfügen“, dann einen Körper der Körperleiste wählen. In einem Riss den Bezugspunkt klicken, in einem zweiten Riss die dritte Koordinate. Danach ebenso die Größe markieren oder eintippen und „Einfügen“ drücken, oder <kbd>Enter</kbd>.</td></tr>
+        <tr><td>CSG</td><td>Im Feld GEOMETRIEDATEN „CSG-Vereinigung“, „CSG-Differenz“, „CSG-Durchschnitt“ oder „CSG-Summe“ einfügen, dann die Glieder, zuletzt „CSG-Ende“. Bei der Differenz bleibt das erste Glied, die weiteren werden abgezogen.</td></tr>
+        <tr><td>Neue Körper</td><td>„#Neu“ beginnt einen neuen Körper, „Neu_Ende“ schließt ihn ab. Sein Name steht danach in der Liste der Körper und lässt sich beliebig oft einfügen.</td></tr>
+        <tr><td>Ändern</td><td>Objekt in der Liste OBJEKTE wählen, Werte ändern, „Ändern“ drücken. Werkzeug „Position“: Körper im Riss ziehen. Pfeiltasten verschieben, <kbd>Bild↑</kbd> <kbd>Bild↓</kbd> in der Höhe.</td></tr>
+        <tr><td>Zoom</td><td>F5-Leiste: <kbd>&lt;</kbd> zoomt hinein, <kbd>&gt;</kbd> heraus, getrennt für 2D und 3D. Klick in den Schrägriss zoomt hinein, rechte Taste heraus, mittlere Taste zeigt ihn über alle vier Felder. Mausrad zoomt, rechte Taste schiebt.</td></tr>
+        <tr><td>Raytracing</td><td>Werkzeug „Raytrace“ oder <kbd>R</kbd> berechnet den Schrägriss mit Schatten, Spiegelung und den Texturen von POV-Ray. „Ausgabe“ schreibt die Datei für POV-Ray.</td></tr>
+        <tr><td>Darstellung</td><td>Menü Ansicht: modern oder klassisch wie Version 1.3 von 2002.</td></tr>
+        <tr><td>Tasten</td><td><kbd>Strg</kbd>+<kbd>Z</kbd> rückgängig, <kbd>Strg</kbd>+<kbd>Y</kbd> wiederholen, <kbd>Strg</kbd>+<kbd>D</kbd> verdoppeln, <kbd>Entf</kbd> löschen, <kbd>Esc</kbd> abbrechen, <kbd>1</kbd> bis <kbd>4</kbd> einen Riss vergrößern, <kbd>0</kbd> alle zeigen, <kbd>F</kbd> alles zeigen.</td></tr>
+      </table>
+      <p class="hint">Nach der Diplomarbeit „Grundlagen der 3D-Computergrafik“ von Herbert Kleber (2002). Version 2.0 von Florian Kleber (2026), in Rust mit WebAssembly, WebGPU und einer GraphQL-API auf Aosabi, die im Web Worker der Seite läuft.</p>
+      <div class="dialog-buttons"><button class="c-button c-default" type="button" data-close autofocus>OK</button></div>
+    </div>
+  </dialog>
+
+  <!-- F9: the Dia-Show, black over the whole screen. -->
+  <div id="f9" class="f9" hidden>
+    <img id="f9-picture" alt="">
+    <div class="f9-buttons">
+      <button id="bbild-rueck" class="c-button c-mini" type="button" title="Zurück (←)">&lt;</button>
+      <button id="bbild-weiter" class="c-button c-mini" type="button" title="Weiter (→)">&gt;</button>
+      <button id="bbild-ende" class="c-button c-mini" type="button" title="Ende (Esc)">End</button>
+    </div>
+  </div>
+
+  <!-- The splash while WebAssembly and WebGPU start, frmSplash of version 1.3. -->
+  <div id="splash" class="splash" role="status">
+    <div class="splash-card c-win" data-border="dialog">
+      <span class="splash-logo" data-icon="app" aria-hidden="true"></span>
+      <h1 class="splash-title">3D-Bausteine</h1>
+      <p class="splash-version">Version 2.0</p>
+      <p class="splash-origin">nach 3D-Baukasten 1.3 von Herbert Kleber (2002)</p>
+      <p class="splash-copyright">Florian Kleber 2026</p>
+      <p class="splash-state" id="splash-state">WebAssembly und WebGPU starten …</p>
+    </div>
+  </div>
+
+  <div id="tooltip" class="c-tooltip" role="tooltip" hidden></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,640 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//
+// 3D-Bausteine koerper.js: the tab Körper of the window Eingaben, F4 of
+// version 1.3. It holds the list OBJEKTE, CB2, whose lines the service
+// writes in the format of 1.3, and the input mask GEOMETRIEDATEN: the list
+// of bodies CB1, the fields T1 with their captions, and the buttons
+// Einfügen, Ändern and Löschen.
+//
+// It also runs the handshake between the mouse and the fields, `mark_point`
+// of 3D_bau.frm: a click in a normal view writes the two coordinates of that
+// view into the fields and locks them, which turns their digits from yellow
+// to green, a click in a second view gives the third coordinate. The size
+// follows the same way, as the difference to the point. Nothing is inserted
+// until the user presses Einfügen.
+//
+// Version 1.3 keeps its objects in one flat list, where a CSG opener holds
+// the lines up to its CSG-Ende. Version 2.0 keeps a tree, and the line that
+// is selected decides where a new item goes: behind a body into its group,
+// behind an opener into that group as its first member, behind a CSG-Ende
+// behind the whole group. Inserting CSG-Ende selects the end of the open
+// group, so the next body lands behind it, as in 1.3.
+
+import { pack } from './store.js';
+import { commit, groupsOf, selectItem, selectLine, subtreeIds } from './scene.js';
+import {
+  $,
+  $$,
+  app,
+  emit,
+  escapeHtml,
+  formatNumber,
+  itemById,
+  nextColor,
+  on,
+  parseNumber,
+  selectedItem,
+  selectedLine,
+  setStatus,
+} from './state.js';
+import { icon } from './icons.js';
+
+/** The text of `Drehung um X,Y,Z - Achse`, L1(7) of every mask. */
+const ROTATION_CAPTION = 'Drehung um X,Y,Z - Achse';
+
+/**
+ * The masks of `CB1_Click`: the caption of row 1, of the size on the left
+ * and on the right, the fields the mask hides, and the kind of the item.
+ */
+const MASKS = {
+  Kugel: { kind: 'SPHERE', l1: 'Kugelmittelpunkt (x,y,z)', l4: 'Radius', l6: '', hide: [5, 6], sizes: 'single' },
+  Kegel: { kind: 'CONE', l1: 'Mittelpunkt der Grundfläche (x,y,z)', l4: 'Radius', l6: 'Höhe', hide: [5], sizes: 'round' },
+  Zylinder: { kind: 'CYLINDER', l1: 'Mittelpunkt der Grundfläche (x,y,z)', l4: 'Radius', l6: 'Höhe', hide: [5], sizes: 'round' },
+  Würfel: { kind: 'CUBE', l1: 'Eckpunkt (hinten,unten,links) (x,y,z)', l4: 'Kantenlänge', l6: '', hide: [5, 6], sizes: 'single' },
+  Quader: { kind: 'CUBOID', l1: 'Eckpunkt (hinten,unten,links)(x,y,z)', l4: 'Kantenlängen x y z', l6: '', hide: [], sizes: 'box' },
+  Pyramide: { kind: 'PYRAMID', l1: 'Eckpunkt (hinten,unten,links)(x,y,z)', l4: 'Kantenlängen x y', l6: 'Höhe', hide: [], sizes: 'box' },
+  Prisma: { kind: 'PRISM', l1: 'Eckpunkt (hinten,unten,links)(x,y,z)', l4: 'Kantenlängen x y', l6: 'Höhe', hide: [], sizes: 'box' },
+  Disc: { kind: 'DISC', l1: 'Mittelpunkt (x,y,z)', l4: 'Radius', l6: '', hide: [5, 6], sizes: 'single', inner: true },
+  Ebene: { kind: null, plane: true },
+  'CSG-Vereinigung': { kind: 'UNION', group: true },
+  'CSG-Differenz': { kind: 'DIFFERENCE', group: true },
+  'CSG-Durchschnitt': { kind: 'INTERSECTION', group: true },
+  'CSG-Summe': { kind: 'MERGE', group: true },
+  'CSG-Ende': { end: 'csg' },
+  '#Neu': { kind: 'DECLARE', group: true },
+  Neu_Ende: { end: 'declare' },
+};
+
+/** The entries of CB1 in the order of version 1.3, f4 §4.1. */
+const ENTRIES = Object.keys(MASKS);
+
+/** The kinds of the groups of the CSG, with their entry of CB1. */
+const GROUP_LABELS = { UNION: 'CSG-Vereinigung', DIFFERENCE: 'CSG-Differenz', INTERSECTION: 'CSG-Durchschnitt', MERGE: 'CSG-Summe', DECLARE: '#Neu' };
+
+/** The entry of CB1 of each kind of body. */
+const BODY_LABELS = { SPHERE: 'Kugel', CONE: 'Kegel', CYLINDER: 'Zylinder', CUBE: 'Würfel', CUBOID: 'Quader', PYRAMID: 'Pyramide', PRISM: 'Prisma', DISC: 'Disc' };
+
+/** The state of the handshake: the phase, `pcount` of 1.3, and the locked fields. */
+const mark = { phase: 1, locked: new Set(), view: null, point: null };
+
+/** Returns the field T1(n). */
+const field = (n) => $(`#t1-${n}`);
+
+/** Returns the number in the field T1(n). */
+const value = (n, fallback = 0) => parseNumber(field(n).value, fallback);
+
+/** Writes `v` into the field T1(n). */
+function setValue(n, v) {
+  field(n).value = formatNumber(v);
+}
+
+/** Returns the declarations of the scene, whose names CB1 offers after Neu_Ende. */
+function declarations() {
+  return app.scene.items.filter((item) => item.kind === 'DECLARE');
+}
+
+/** Returns the mask of the entry `text` of CB1, or null for an unknown text. */
+function maskOf(text) {
+  const name = String(text ?? '').trim();
+  if (MASKS[name]) return { name, ...MASKS[name] };
+  const lower = name.toLowerCase();
+  const entry = ENTRIES.find((e) => e.toLowerCase() === lower);
+  if (entry) return { name: entry, ...MASKS[entry] };
+  const declared = declarations().find((d) => d.name.toLowerCase() === lower);
+  if (declared) {
+    return { name: declared.name, kind: 'INSTANCE', source: declared.id, l1: 'Bezugspunkt (x,y,z)', l4: 'Skalierung x y z', l6: '', hide: [], sizes: 'box' };
+  }
+  return null;
+}
+
+/** Returns the mask that shows `item`. */
+function maskOfItem(item) {
+  if (item.kind === 'INSTANCE') {
+    const source = itemById(item.source);
+    return maskOf(source?.name) ?? { name: item.name, kind: 'INSTANCE', source: item.source, l1: 'Bezugspunkt (x,y,z)', l4: 'Skalierung x y z', l6: '', hide: [], sizes: 'box' };
+  }
+  return maskOf(BODY_LABELS[item.kind] ?? GROUP_LABELS[item.kind]);
+}
+
+// ---------------------------------------------------------------------------
+// The mask.
+
+/** The mask that CB1 shows. */
+let current = maskOf('Quader');
+
+/**
+ * Sets the mask of `mask`, `CB1_Click`: the captions, the visible fields,
+ * and for `defaults` the values of `Obj_Def_Werte`, 0 0 0, 1 1 1 and 0 0 0.
+ */
+function applyMask(mask, { defaults = true } = {}) {
+  current = mask;
+  $('#cb1-edit').value = mask?.name ?? '';
+  const body = mask && !mask.group && !mask.end && !mask.plane;
+  const group = Boolean(mask?.group);
+  const editable = body || group;
+  const hint = $('#geo-hint');
+  let l1 = mask?.l1 ?? '';
+  let l4 = mask?.l4 ?? '';
+  let l6 = mask?.l6 ?? '';
+  let hide = mask?.hide ?? [];
+  if (group) {
+    l1 = 'Verschiebung der Glieder (x,y,z)';
+    l4 = 'Skalierung x y z';
+    l6 = '';
+    hide = [];
+    hint.textContent = mask.kind === 'DECLARE'
+      ? 'Neuer Körper: alles bis Neu_Ende gehört dazu. Den Namen im Feld Name ändern.'
+      : 'Gruppe: alles bis CSG-Ende gehört dazu. Die Werte bewegen, skalieren und drehen die Glieder.';
+  } else if (mask?.end) {
+    hint.textContent = mask.end === 'csg' ? 'CSG-Ende schließt die offene Gruppe.' : 'Neu_Ende schließt den neuen Körper ab. Sein Name steht danach in dieser Liste.';
+  } else if (mask?.plane) {
+    hint.textContent = 'Ebene ist in dieser Version nicht einfügbar.';
+  } else {
+    hint.textContent = '';
+  }
+  hint.hidden = hint.textContent === '';
+  $('#l1-1').textContent = editable ? l1 : '';
+  $('#l1-4').textContent = editable ? l4 : '';
+  $('#l1-6').textContent = editable ? l6 : '';
+  $('#l1-7').textContent = editable ? ROTATION_CAPTION : '';
+  for (let n = 1; n <= 9; n += 1) {
+    const f = field(n);
+    f.hidden = !editable || hide.includes(n);
+    f.disabled = !editable;
+  }
+  const inner = Boolean(mask?.inner);
+  $('#l1-10').hidden = !inner;
+  field(10).hidden = !inner;
+  for (const id of ['#l1-11', '#t1-11', '#l1-12', '#t1-12']) $(id).hidden = !editable;
+  if (defaults && editable) {
+    for (const n of [1, 2, 3]) setValue(n, 0);
+    for (const n of [4, 5, 6]) setValue(n, 1);
+    for (const n of [7, 8, 9]) setValue(n, 0);
+    // Version 1.3 keeps T1(10) when the mask changes, F4-Q61. 2.0 resets it.
+    setValue(10, 0);
+    $('#t1-11').value = '';
+  }
+  startMark();
+  updatePreview();
+}
+
+/** Starts a new handshake, `Start_Mark`: every field free, the phase of the position. */
+function startMark() {
+  mark.phase = 1;
+  mark.locked.clear();
+  mark.view = null;
+  paintLocks();
+}
+
+/** Colours the fields by their state: yellow free, green locked, the turns red. */
+function paintLocks() {
+  for (let n = 1; n <= 10; n += 1) {
+    const f = field(n);
+    if (n >= 7 && n <= 9) continue;
+    f.classList.toggle('locked', mark.locked.has(n));
+    f.classList.toggle('free', !mark.locked.has(n));
+    f.title = mark.locked.has(n) ? 'durch Mausklick festgelegt' : '';
+  }
+}
+
+/** The field of each axis for the position and for the size. */
+const POSITION_FIELD = { x: 1, y: 2, z: 3 };
+const SIZE_FIELD = { x: 4, y: 5, z: 6 };
+
+/** Returns the size fields a mask needs. */
+function neededSizes(mask) {
+  if (mask.sizes === 'single') return [4];
+  if (mask.sizes === 'round') return [4, 6];
+  return [4, 5, 6];
+}
+
+/**
+ * Takes a click at `point` in the normal view `view` into the handshake,
+ * `mark_point` of 3D_bau.frm. `band` marks the second end of a drag in the
+ * same view, which gives the size at once.
+ */
+function markPoint(view, point, band = false) {
+  if (!point || !current || current.end || current.plane) return;
+  const axes = ['x', 'y', 'z'].filter((axis) => point[axis] != null);
+  const hidden = ['x', 'y', 'z'].find((axis) => point[axis] == null);
+  if (band && mark.phase === 1) {
+    // The press of the drag gave two coordinates, the third stays as typed.
+    finishPosition();
+  }
+  if (mark.phase === 1) {
+    if (mark.view === view) {
+      mark.locked.clear();
+    }
+    let wrote = 0;
+    for (const axis of axes) {
+      const n = POSITION_FIELD[axis];
+      if (mark.view != null && mark.view !== view && mark.locked.has(n)) continue;
+      setValue(n, point[axis]);
+      mark.locked.add(n);
+      wrote += 1;
+    }
+    app.marks = { ...app.marks, green: { x: value(1), y: value(2), z: value(3) }, greenView: view, yellow: [] };
+    mark.view = view;
+    paintLocks();
+    if ([1, 2, 3].every((n) => mark.locked.has(n)) || (wrote === 0 && mark.view !== view)) {
+      finishPosition();
+    } else {
+      setStatus(`${hidden}-Koordinate markieren`);
+    }
+    emit('marks');
+    updatePreview();
+    return;
+  }
+  // The phase of the size: the differences to the point, by axis.
+  const origin = { x: value(1), y: value(2), z: value(3) };
+  const diff = {};
+  for (const axis of axes) diff[axis] = point[axis] - origin[axis];
+  if (current.sizes === 'single') {
+    const r = Math.max(...axes.map((axis) => Math.abs(diff[axis])));
+    if (r > 0) {
+      setValue(4, r);
+      mark.locked.add(4);
+    }
+  } else if (current.sizes === 'round') {
+    const flat = axes.filter((axis) => axis !== 'z');
+    if (flat.length) {
+      const r = Math.max(...flat.map((axis) => Math.abs(diff[axis])));
+      if (r > 0) {
+        setValue(4, r);
+        setValue(5, r);
+        mark.locked.add(4);
+      }
+    }
+    if (diff.z != null && diff.z !== 0) {
+      setValue(6, diff.z);
+      mark.locked.add(6);
+    }
+  } else {
+    for (const axis of axes) {
+      if (diff[axis] === 0) continue;
+      setValue(SIZE_FIELD[axis], diff[axis]);
+      mark.locked.add(SIZE_FIELD[axis]);
+    }
+  }
+  app.marks = { ...app.marks, green: { ...point, [hidden]: origin[hidden] }, greenView: view };
+  paintLocks();
+  const missing = neededSizes(current).filter((n) => !mark.locked.has(n));
+  if (missing.length === 0) {
+    // Both clicks are in: yellow crosses at the far corner, a new handshake.
+    const far = { x: origin.x + value(4), y: origin.y + value(5), z: origin.z + value(6) };
+    app.marks = { ...app.marks, green: null, yellow: [origin, far] };
+    startMark();
+    setStatus(app.look === 'classic' ? '' : 'Einfügen drücken (Enter)');
+  } else {
+    const axis = { 4: 'x', 5: 'y', 6: 'z' }[missing[0]];
+    setStatus({ x: 'Tiefe markieren', y: 'Breite markieren', z: 'Höhe markieren' }[axis]);
+  }
+  emit('marks');
+  updatePreview();
+}
+
+/** Ends the phase of the position: yellow crosses at the point, the fields free again, the phase of the size. */
+function finishPosition() {
+  const point = { x: value(1), y: value(2), z: value(3) };
+  mark.phase = 2;
+  mark.locked.clear();
+  mark.view = null;
+  app.marks = { ...app.marks, green: null, yellow: [point] };
+  paintLocks();
+  setStatus('Grösse angeben oder markieren');
+}
+
+/** Returns the item the mask describes, for `addItem`, `updateItem` and the preview. */
+function itemFromFields(mask, base = null) {
+  const a = value(4, 1);
+  const b = value(5, 1);
+  const c = value(6, 1);
+  let size;
+  if (mask.group || mask.sizes === 'box') size = { x: a, y: b, z: c };
+  else if (mask.sizes === 'round') size = { x: Math.abs(a), y: Math.abs(a), z: c };
+  else size = { x: Math.abs(a), y: Math.abs(a), z: Math.abs(a) };
+  const name = $('#t1-11').value.trim();
+  return {
+    ...(base ?? {}),
+    name: name || base?.name || defaultName(mask),
+    kind: mask.kind,
+    position: { x: value(1), y: value(2), z: value(3) },
+    size,
+    rotation: { x: value(7), y: value(8), z: value(9) },
+    innerRadius: mask.inner ? Math.max(0, value(10)) : 0,
+    source: mask.source ?? null,
+  };
+}
+
+/** Returns the name a new item of `mask` gets: the entry of CB1, `Werkstück<n>` for a new body. */
+function defaultName(mask) {
+  if (mask.kind === 'DECLARE') {
+    const names = new Set(declarations().map((d) => d.name));
+    let n = declarations().length + 1;
+    while (names.has(`Werkstück${n}`)) n += 1;
+    return `Werkstück${n}`;
+  }
+  return mask.name;
+}
+
+/** Hands the body in the making to the renderer, which draws it faint in every view. */
+function updatePreview() {
+  if (!app.ready) return;
+  const body = current && !current.group && !current.end && !current.plane && current.kind;
+  const active = body && app.mode === 'einfuegen' && (mark.phase === 2 || mark.locked.size > 0);
+  if (!active) {
+    app.bridge.state({ preview: null });
+    return;
+  }
+  const item = { ...itemFromFields(current), id: '__preview', parent: null, color: '#808080', texture: null };
+  const all = pack([...app.scene.items, item], app.textures);
+  app.bridge.state({ preview: all.slice(all.length - 20) });
+}
+
+// ---------------------------------------------------------------------------
+// The list OBJEKTE.
+
+/** Writes the lines of the list OBJEKTE into CB2, `CB2_ADD` of version 1.3. */
+function renderList() {
+  const list = $('#cb2');
+  list.innerHTML = app.lines
+    .map((line, i) => {
+      const item = itemById(line.item);
+      const kind = line.end ? 'END' : item?.kind ?? 'RASTER';
+      const glyph = app.look === 'classic' || !item || line.end ? '' : `<span class="row-icon">${icon(item.kind, 'modern')}</span>`;
+      return `<div class="c-list-row" role="option" data-line="${i}" data-kind="${kind}" aria-selected="${i === app.line}">${glyph}${escapeHtml(line.text)}</div>`;
+    })
+    .join('');
+  list.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+}
+
+/** Shows the selected line: the mask and the values of its item, the red crosses, the selection in the views. */
+function showSelection() {
+  renderList();
+  const line = selectedLine();
+  const item = selectedItem();
+  app.bridge?.state({ selected: item?.id ?? '' });
+  const editable = Boolean(item) && !line?.end;
+  $('#btn-change').disabled = !editable;
+  $('#btn-clear').disabled = !editable;
+  if (!line || line.item == null) {
+    app.marks = { ...app.marks, red: null };
+    emit('marks');
+    return;
+  }
+  if (line.end) {
+    applyMask(maskOf(item?.kind === 'DECLARE' ? 'Neu_Ende' : 'CSG-Ende'), { defaults: false });
+    app.marks = { ...app.marks, red: null };
+    emit('marks');
+    return;
+  }
+  const mask = maskOfItem(item);
+  applyMask(mask, { defaults: false });
+  setValue(1, item.position.x);
+  setValue(2, item.position.y);
+  setValue(3, item.position.z);
+  setValue(4, item.size.x);
+  setValue(5, item.size.y);
+  setValue(6, item.size.z);
+  setValue(7, item.rotation.x);
+  setValue(8, item.rotation.y);
+  setValue(9, item.rotation.z);
+  setValue(10, item.innerRadius ?? 0);
+  $('#t1-11').value = item.name;
+  fillGroups(item);
+  app.marks = { green: null, yellow: [], red: { ...item.position } };
+  emit('marks');
+}
+
+/** Fills the list Gruppe with the groups `item` may move into. */
+function fillGroups(item) {
+  const select = $('#t1-12');
+  const inside = new Set(item ? subtreeIds(item.id) : []);
+  const groups = app.scene.items.filter((g) => GROUP_LABELS[g.kind] && !inside.has(g.id));
+  select.innerHTML = ['<option value="">(oberste Ebene)</option>', ...groups.map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.name)}</option>`)].join('');
+  select.value = item?.parent ?? '';
+}
+
+/** Fills the drop-down list of CB1 with its fifteen entries and the names of the new bodies. */
+function renderCombo() {
+  const list = $('#cb1 .c-combo-list');
+  const names = [...ENTRIES, ...declarations().map((d) => d.name)];
+  list.innerHTML = names.map((name) => `<div class="c-list-row" role="option" data-entry="${escapeHtml(name)}">${escapeHtml(name)}</div>`).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Einfügen, Ändern, Löschen.
+
+/** Returns where a new item goes for the selected line: its group and the item it follows. */
+function insertionPoint() {
+  const line = selectedLine();
+  const item = selectedItem();
+  if (!line || !item) {
+    const top = app.scene.items.filter((i) => i.parent == null);
+    return { parent: null, after: top.at(-1)?.id ?? null };
+  }
+  if (line.end) return { parent: item.parent ?? null, after: item.id };
+  if (GROUP_LABELS[item.kind]) return { parent: item.id, after: item.id };
+  return { parent: item.parent ?? null, after: item.id };
+}
+
+/** Inserts what the mask describes, `BtnEinf_Click`. */
+export async function insert() {
+  const text = $('#cb1-edit').value;
+  const mask = maskOf(text);
+  if (!mask) {
+    setStatus(`Unbekannter Körper: ${text.trim()}`, 4);
+    return;
+  }
+  if (mask.plane) {
+    setStatus('Ebene ist in dieser Version nicht einfügbar', 4);
+    return;
+  }
+  if (mask.end) {
+    closeGroup(mask.end);
+    return;
+  }
+  const { parent, after } = insertionPoint();
+  const item = {
+    ...itemFromFields(mask),
+    parent,
+    color: mask.group ? '#d9d9d9' : nextColor(),
+    texture: null,
+  };
+  const added = await commit(() => app.store.addItem(app.scene.id, item, after));
+  if (!added) return;
+  selectItem(added.id);
+  setStatus(`Eingefügt: ${added.name}`, 2);
+  // The next body may follow at once: a new handshake with the same body.
+  if (!mask.group) {
+    applyMask(mask, { defaults: false });
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) field(n).disabled = false;
+  }
+  startMark();
+  app.marks = { ...app.marks, green: null, yellow: [] };
+  emit('marks');
+  updatePreview();
+}
+
+/** Closes the innermost open group, `CSG-Ende`, or the open new body, `Neu_Ende`, by selecting its end. */
+function closeGroup(kind) {
+  const { parent } = insertionPoint();
+  const open = [itemById(parent), ...groupsOf(itemById(parent))].filter(Boolean);
+  const csg = open.findIndex((g) => g.kind !== 'DECLARE' && GROUP_LABELS[g.kind]);
+  const declare = open.findIndex((g) => g.kind === 'DECLARE');
+  // A CSG-Ende closes the innermost group of the CSG, never across an open #Neu.
+  const index = kind === 'csg' ? (declare >= 0 && declare < csg ? -1 : csg) : declare;
+  const target = open[index] ?? null;
+  if (!target) {
+    setStatus(kind === 'csg' ? 'Keine offene CSG-Gruppe' : 'Kein offenes #Neu', 4);
+    return;
+  }
+  selectItem(target.id, true);
+  setStatus(kind === 'csg' ? `${target.name} geschlossen` : `${target.name} ist jetzt ein Körper der Liste`, 3);
+  renderCombo();
+}
+
+/** Applies the fields to the selected item, `BtnChange_Click`, and keeps the selection. */
+export async function change() {
+  const item = selectedItem();
+  const line = selectedLine();
+  if (!item || line?.end) return;
+  const mask = maskOf($('#cb1-edit').value) ?? maskOfItem(item);
+  const patchMask = mask.group === Boolean(GROUP_LABELS[item.kind]) && !mask.end && !mask.plane ? mask : maskOfItem(item);
+  const next = itemFromFields(patchMask, item);
+  const parent = $('#t1-12').value;
+  const patch = {
+    name: next.name,
+    kind: next.kind,
+    position: next.position,
+    size: next.size,
+    rotation: next.rotation,
+    innerRadius: next.innerRadius,
+    parent: parent === (item.parent ?? '') ? undefined : parent,
+  };
+  if (next.kind === 'INSTANCE') patch.source = next.source;
+  if (patch.parent === undefined) delete patch.parent;
+  const ok = await commit(() => app.store.updateItem(app.scene.id, item.id, patch));
+  if (ok) {
+    selectItem(item.id);
+    setStatus(`Geändert: ${ok.name}`, 2);
+  }
+}
+
+/** Removes the selected item with everything in its groups, `BtnClear_Click`. */
+export async function remove() {
+  const item = selectedItem();
+  if (!item || selectedLine()?.end) return;
+  const before = app.line;
+  const ok = await commit(() => app.store.removeItem(app.scene.id, item.id));
+  if (!ok) return;
+  if (app.scene.items.length === 0) {
+    // After the last object version 1.3 shows the Würfel, F4-Q27.
+    selectLine(-1);
+    applyMask(maskOf('Würfel'));
+    return;
+  }
+  selectLine(Math.min(Math.max(1, before - 1), app.lines.length - 1));
+}
+
+/** Sets the entry `name` of CB1 with its mask and arms it for the mouse, as a click on the body bar does. */
+export function choose(name) {
+  const mask = maskOf(name);
+  if (!mask) return;
+  // The selection stays: it decides where Einfügen puts the body, as akto of 1.3.
+  applyMask(mask);
+  emit('armed', mask.group || mask.end || mask.plane ? null : mask.name);
+  if (mask.plane) setStatus('Ebene ist in dieser Version nicht einfügbar', 4);
+  else if (!mask.group && !mask.end) setStatus('Bezugspunkt in einem Riss markieren');
+}
+
+/** Cancels the handshake and the preview, as Esc does. */
+export function cancelMark() {
+  startMark();
+  app.marks = { ...app.marks, green: null, yellow: [] };
+  setStatus('');
+  emit('marks');
+  updatePreview();
+}
+
+/** Answers the entry of CB1 that the mask shows. */
+export function currentEntry() {
+  return current?.name ?? '';
+}
+
+// ---------------------------------------------------------------------------
+// Wiring.
+
+/** Wires the tab Körper. */
+export function wireKoerper() {
+  renderCombo();
+  applyMask(maskOf('Quader'));
+  $('#cb2').addEventListener('click', (event) => {
+    const row = event.target.closest('[data-line]');
+    if (row) selectLine(Number(row.dataset.line));
+  });
+  $('#cb2').addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const next = Math.min(app.lines.length - 1, Math.max(0, app.line + (event.key === 'ArrowDown' ? 1 : -1)));
+    selectLine(next);
+  });
+  const combo = $('#cb1');
+  const list = combo.querySelector('.c-combo-list');
+  combo.querySelector('.c-combo-arrow').addEventListener('click', () => {
+    renderCombo();
+    list.hidden = !list.hidden;
+  });
+  list.addEventListener('click', (event) => {
+    const row = event.target.closest('[data-entry]');
+    if (!row) return;
+    list.hidden = true;
+    choose(row.dataset.entry);
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (!combo.contains(event.target)) list.hidden = true;
+  });
+  $('#cb1-edit').addEventListener('change', () => {
+    const mask = maskOf($('#cb1-edit').value);
+    if (mask) choose(mask.name);
+    else setStatus(`Unbekannter Körper: ${$('#cb1-edit').value.trim()}`, 4);
+  });
+  for (let n = 1; n <= 10; n += 1) {
+    field(n).addEventListener('input', () => {
+      // Typing over a locked field frees it, the user overrides the click.
+      mark.locked.delete(n);
+      paintLocks();
+      updatePreview();
+    });
+    field(n).addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (selectedItem() && !selectedLine()?.end && app.mode !== 'einfuegen') change();
+        else insert();
+      }
+    });
+  }
+  $('#btn-einf').addEventListener('click', insert);
+  $('#btn-change').addEventListener('click', change);
+  $('#btn-clear').addEventListener('click', remove);
+  on('scene', () => {
+    renderCombo();
+    showSelection();
+  });
+  on('select', () => showSelection());
+  on('mark', ({ view, point, band }) => markPoint(view, point, band));
+  on('mode', () => updatePreview());
+  on('look', () => renderList());
+  showSelection();
+}
+
+/** Returns the lines of CB1, for the menu Objekte, which lists the new bodies too. */
+export function declaredNames() {
+  return declarations().map((d) => d.name);
+}
+
+/** Selects the body bar entry in the tool bar F2, for the look. */
+export function armedButtons(name) {
+  for (const button of $$('#tb2 .tb-button')) button.classList.toggle('armed', button.dataset.body === name);
+  for (const button of $$('#tb2 .tb-button')) button.setAttribute('aria-pressed', String(button.dataset.body === name));
+}
