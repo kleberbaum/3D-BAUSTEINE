@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# The door of the test notebooks into bausteine-core: one primitive of the
+# geometry per subcommand, with its answer as JSON on standard output. It
+# runs on the build host alone and ships in no build.
+[package]
+name = "bausteine-devtool"
+description = "One primitive of the geometry of 3D-Bausteine per subcommand, for the test notebooks."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+bausteine-core = { path = "../bausteine-core" }
