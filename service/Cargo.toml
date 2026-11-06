@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# The service of 3D-Bausteine on Aosabi: the scenes of a page behind one
+# GraphQL API, which the Web Worker of the page runs through aosabi::embed.
+#
+# A service of Aosabi is a cargo workspace of its own, so cargo aosabi
+# builds it wherever it stands. It names the facade aosabi by its path in
+# the submodule third_party/aosabi, since the crates of Aosabi are not
+# published to a registry yet.
+
+[package]
+name = "bausteine"
+version = "2.0.0"
+edition = "2024"
+license = "GPL-2.0-only"
+publish = false
+
+[workspace]
+
+[dependencies]
+aosabi = { path = "../third_party/aosabi/crates/aosabi" }
+bausteine-core = { path = "../crates/bausteine-core" }
+
+[lints.rust]
+unsafe_code = "forbid"
