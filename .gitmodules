@@ -1,0 +1,3 @@
+[submodule "third_party/aosabi"]
+	path = third_party/aosabi
+	url = https://github.com/netsnek/aosabi.git
