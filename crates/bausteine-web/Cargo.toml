@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# The module of the Web Worker of 3D-Bausteine: the service of Aosabi with
+# its GraphQL API, booted through aosabi::embed, and the renderer on WebGPU
+# through wgpu, drawing into the OffscreenCanvas the page hands over.
+# tools/build.sh builds it for wasm32-unknown-unknown and binds it with
+# wasm-bindgen. On the build host the same engine answers the GraphQL
+# requests of the test notebooks through the binary bausteine-graphql.
+#
+# It is a cargo workspace of its own, since it links the copy of the service
+# that cargo aosabi writes under service/target/aosabi/app, which exists
+# only after that build.
+
+[package]
+name = "bausteine-web"
+description = "The Web Worker of 3D-Bausteine: the GraphQL engine of Aosabi and the renderer on WebGPU."
+version = "2.0.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "GPL-2.0-only"
+authors = ["Florian Kleber <kleber@snek.at>"]
+repository = "https://github.com/kleberbaum/3D-BAUSTEINE"
+publish = false
+build = "build.rs"
+
+[workspace]
+resolver = "3"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "bausteine-graphql"
+path = "src/bin/bausteine-graphql.rs"
+
+[dependencies]
+bausteine-core = { path = "../bausteine-core" }
+# The copy of the service with the glue that cargo aosabi generates, whose
+# entry the engine boots.
+bausteine = { path = "../../service/target/aosabi/app" }
+aosabi = { path = "../../third_party/aosabi/crates/aosabi" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "=0.2.130"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["OffscreenCanvas", "console"] }
+wgpu = { version = "30", default-features = false, features = ["webgpu", "wgsl"] }
+
+[build-dependencies]
+aosabi-build = { path = "../../third_party/aosabi/crates/aosabi-build" }
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# The renderer turns counts into coordinates and coordinates into pixels all
+# the time, and every such value is far below the range where a cast loses
+# anything that is visible on a screen.
+cast_precision_loss = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_possible_wrap = "allow"
+many_single_char_names = "allow"
+similar_names = "allow"
+
+# The module of the browser. Size over speed and no debug information, since
+# every visitor downloads it. The symbols stay, since wasm-bindgen reads the
+# section of the target features.
+[profile.release]
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "debuginfo"
