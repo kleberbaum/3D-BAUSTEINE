@@ -1,0 +1,102 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# The continuous integration of 3D-Bausteine, run on every push and on every pull request.
+#
+# The job checks the formatting and the lints of the geometry, the devtool, the service and
+# the module of the Web Worker, builds everything with tools/build.sh, and runs the test
+# notebooks with papermill, the ones that drive a headless Chromium with WebGPU included.
+#
+# Every action is pinned to the commit of a release, with its tag beside it, as Aosabi pins
+# them. No job reads a secret, and the token of the job can only read the repository.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build and check
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out the tree with Aosabi
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: true
+
+      # The file rust-toolchain.toml pins the compiler with its components and the target
+      # wasm32-unknown-unknown, and rustup installs what it names.
+      - name: Install the pinned toolchain
+        run: |
+          rustup toolchain install --no-self-update
+          rustc -vV
+
+      - name: Restore the cargo cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/bin/wasm-bindgen
+            target/
+            service/target/
+            crates/bausteine-web/target/
+            third_party/aosabi/target/
+          key: cargo-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock', 'service/Cargo.lock', 'crates/bausteine-web/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+
+      - name: Check the formatting
+        run: |
+          cargo fmt --check
+          cargo fmt --check --manifest-path service/Cargo.toml
+          cargo fmt --check --manifest-path crates/bausteine-web/Cargo.toml
+
+      # wasm-bindgen-cli has to be the version of wasm-bindgen that the lock file of the module pins.
+      - name: Install wasm-bindgen
+        run: |
+          version=$(sed -n '/^name = "wasm-bindgen"$/{n;s/version = "\(.*\)"/\1/p;}' crates/bausteine-web/Cargo.lock)
+          wasm-bindgen --version 2>/dev/null | grep -q "$version" ||
+            cargo install wasm-bindgen-cli --version "$version" --locked
+
+      - name: Build the service, the module of the Web Worker and the engine of the notebooks
+        run: sh tools/build.sh --dev
+
+      - name: Lint the geometry, the devtool and the module of the Web Worker
+        run: |
+          cargo clippy --locked --workspace --all-targets -- -D warnings
+          cargo clippy --locked --manifest-path crates/bausteine-web/Cargo.toml --lib \
+            --target wasm32-unknown-unknown -- -D warnings
+
+      - name: Install the Python packages and Chromium of the notebooks
+        run: |
+          python3 -m pip install --user -r tests/requirements.txt
+          python3 -m playwright install --with-deps chromium
+
+      - name: Run the test notebooks
+        run: python3 tests/run.py
+
+      - name: Keep the executed notebooks
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: notebooks
+          path: tests/notebooks/out/
+          if-no-files-found: ignore
