@@ -147,26 +147,9 @@ function applyOverrides(params) {
   const screen = wanted('screen');
   if (screen) app.settings = { ...app.settings, screen };
   const theme = wanted('theme');
-  if (theme) unstored('bausteine.theme', () => setDark(theme === 'dark'));
+  if (theme) setDark(theme === 'dark', { persist: false });
   const look = wanted('look');
-  if (look) unstored('bausteine.look', () => setLook(look));
-}
-
-/** Runs `apply` and puts the value of `key` in the storage of the browser back as it was before. */
-function unstored(key, apply) {
-  let before = null;
-  try {
-    before = localStorage.getItem(key);
-  } catch {
-    // A blocked storage has nothing to put back.
-  }
-  apply();
-  try {
-    if (before == null) localStorage.removeItem(key);
-    else localStorage.setItem(key, before);
-  } catch {
-    // A blocked storage took nothing either.
-  }
+  if (look) setLook(look, { persist: false });
 }
 
 /**
@@ -367,39 +350,9 @@ async function askName() {
     field.select();
     return;
   }
-  const input = msgboxInput();
-  input.value = app.scene.name;
-  input.hidden = false;
-  const answer = msgbox('Name der Szene', { title: '3D-Baukasten', kind: 'none', buttons: ['OK', 'Abbrechen'], input: app.scene.name });
-  // Enter in the line presses OK, unless the message box already took the key.
-  const enter = (event) => {
-    if (event.key !== 'Enter' || event.defaultPrevented) return;
-    event.preventDefault();
-    $('#msgbox-buttons .c-default')?.click();
-  };
-  input.addEventListener('keydown', enter);
-  input.focus();
-  input.select();
-  const pressed = await answer;
-  input.removeEventListener('keydown', enter);
-  const name = input.value;
-  input.hidden = true;
-  if (pressed === 'OK') await rename(name);
-}
-
-/** Answers the input line of the message box, which the skeleton holds as `#msgbox-input`, and makes it where it is missing. */
-function msgboxInput() {
-  let input = $('#msgbox-input');
-  if (!input) {
-    input = document.createElement('input');
-    input.id = 'msgbox-input';
-    input.className = 'c-text';
-    input.type = 'text';
-    input.hidden = true;
-    input.setAttribute('aria-labelledby', 'msgbox-text');
-    $('#msgbox .c-msgbox-body').after(input);
-  }
-  return input;
+  // The message box shows the line with the name selected, Enter in it presses OK, and the line keeps what was typed.
+  const pressed = await msgbox('Name der Szene', { title: '3D-Baukasten', kind: 'none', buttons: ['OK', 'Abbrechen'], input: app.scene.name });
+  if (pressed === 'OK') await rename($('#msgbox-input')?.value);
 }
 
 /** The format of the scene file and the newest version this page writes and reads. */

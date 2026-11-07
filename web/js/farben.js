@@ -162,15 +162,28 @@ function paintSwatch(item) {
 }
 
 /**
+ * Answers whether the schema the worker sends with `ready` gives the type
+ * Texture the field `material`. A worker that sent no schema counts as one
+ * that has it, and the request then tells.
+ */
+function schemaHasMaterial() {
+  const schema = String(app.bridge?.schema ?? '');
+  if (schema === '') return true;
+  const texture = /\btype\s+Texture\s*\{([^}]*)\}/.exec(schema);
+  return Boolean(texture && /^\s*material\s*:/m.test(texture[1]));
+}
+
+/**
  * Reads the materials of the textures, `Texture.material`, and paints the
  * swatch again. The lists the store loads at the start answer them where
  * their query asks for the field, and else farben.js asks the service for
- * them itself. A request that fails leaves the swatch in the greys of the
- * families.
+ * them itself, once the schema of `ready` names the field. A schema without
+ * it or a request that fails leaves the swatch in the greys of the families.
  */
 async function loadMaterials() {
   let list = (app.store?.textures ?? []).filter((t) => t.material);
   if (list.length === 0) {
+    if (!schemaHasMaterial()) return;
     try {
       const data = await app.store.request('{ textures { name material { surface base accent reflection } } }');
       list = (data?.textures ?? []).filter((t) => t.material);
@@ -420,8 +433,9 @@ export function wireFarben() {
       showSurface();
       return;
     }
-    const texture = cb3.value || null;
-    if (texture === (item.texture ?? null)) return;
+    // Keine has the empty value, which the service reads as no texture, where null would leave the texture as it is.
+    const texture = cb3.value;
+    if (texture === (item.texture ?? '')) return;
     await commit(() => app.store.updateItem(app.scene.id, item.id, { texture }));
   });
   $('#farben').addEventListener('click', (event) => {

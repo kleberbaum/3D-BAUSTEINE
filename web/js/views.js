@@ -1023,13 +1023,16 @@ function onPointerMove(view, el, event) {
  * once it has left the press by more than CLICK_SLOP: it pans or turns the
  * view, moves the body or pulls a handle. The element `el` of the view
  * shows the class `dragging` only while `current` is the drag of the page,
- * since a drag replayed after the release has already ended.
+ * since a drag replayed after the release has already ended. The last
+ * pointer stays at the press until the drag begins, so the first step of a
+ * pan or a turn covers the whole way from the press and the picture keeps
+ * up with the pointer.
  */
 function applyMove(current, view, el, event) {
+  if (!moved(current, event) && !current.dragging) return;
   const dx = event.clientX - current.last.x;
   const dy = event.clientY - current.last.y;
   current.last = { x: event.clientX, y: event.clientY };
-  if (!moved(current, event) && !current.dragging) return;
   if (!current.dragging) {
     current.dragging = true;
     if (current.kind !== 'mark' && drag === current) el.classList.add('dragging');
