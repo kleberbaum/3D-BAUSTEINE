@@ -47,7 +47,12 @@ impl Body {
         Self::Disc,
     ];
 
-    /// Returns the German name the lesson uses.
+    /// Returns the name the interface of version 1.3 gives the body.
+    ///
+    /// The names are the German ones of the lesson, and the disc keeps the
+    /// name `Disc` that the body bar, the menu Objekte and the list of
+    /// bodies CB1 of version 1.3 give it, so the API, the examples and the
+    /// interface name every body alike.
     #[must_use]
     pub const fn label(self) -> &'static str {
         match self {
@@ -58,7 +63,7 @@ impl Body {
             Self::Cuboid => "Quader",
             Self::Pyramid => "Pyramide",
             Self::Prism => "Prisma",
-            Self::Disc => "Scheibe",
+            Self::Disc => "Disc",
         }
     }
 

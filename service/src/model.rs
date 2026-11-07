@@ -137,7 +137,8 @@ fn api_kind(kind: body::Kind) -> Kind {
 pub struct KindInfo {
     /// The kind.
     pub kind: Kind,
-    /// The German name of the kind.
+    /// The name of the kind in the interface of version 1.3, `Disc` for
+    /// the disc and German for every other kind.
     pub label: String,
     /// What the position of a body names, empty for a group.
     pub anchor: String,
@@ -322,6 +323,41 @@ pub struct Texture {
     pub name: String,
     /// The German name of its group.
     pub group: String,
+    /// How the ray tracer in the browser approximates the texture, which the
+    /// swatch of the tab Oberfläche paints as well.
+    pub material: Material,
+}
+
+/// The family of a surface, which decides how the ray tracer shades it.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Surface {
+    /// A matte surface of one colour.
+    Plain,
+    /// A metal, which mirrors its surroundings in its own colour.
+    Metal,
+    /// A glass, which lets light through and mirrors at a flat angle.
+    Glass,
+    /// A wood, with the rings of its grain.
+    Wood,
+    /// A marble, with its veins.
+    Marble,
+    /// A stone of grains, a granite or an agate.
+    Granite,
+    /// The stripes of a candy cane.
+    Stripes,
+}
+
+/// How the ray tracer in the browser approximates a standard texture.
+pub struct Material {
+    /// The family of the surface.
+    pub surface: Surface,
+    /// The main colour as #rrggbb.
+    pub base: String,
+    /// The second colour of a pattern as #rrggbb, which a metal and a glass
+    /// leave black.
+    pub accent: String,
+    /// How much of its surroundings the surface mirrors, from zero to one.
+    pub reflection: f64,
 }
 
 /// An example scene a class starts from.
@@ -656,6 +692,42 @@ fn parse_color(color: &str) -> [f32; 3] {
 fn format_color(color: [f32; 3]) -> String {
     let [r, g, b] = color.map(|c| (c.clamp(0.0, 1.0) * 255.0).round() as u8);
     format!("#{r:02x}{g:02x}{b:02x}")
+}
+
+/// Returns the standard textures of the geometry crate, each with the
+/// material the ray tracer in the browser renders it with.
+pub fn texture_list() -> Vec<Texture> {
+    texture::TEXTURES
+        .iter()
+        .map(|t| Texture {
+            name: String::from(t.name),
+            group: String::from(t.group),
+            material: material(&t.material),
+        })
+        .collect()
+}
+
+/// Returns the material of the API for a material of the geometry crate.
+///
+/// The table of the geometry crate writes a reflection with at most two
+/// decimals, which an `f32` holds only nearly, so the thousandth gives the
+/// number back as the table writes it.
+fn material(source: &texture::Material) -> Material {
+    let surface = match source.surface {
+        texture::Surface::Plain => Surface::Plain,
+        texture::Surface::Metal => Surface::Metal,
+        texture::Surface::Glass => Surface::Glass,
+        texture::Surface::Wood => Surface::Wood,
+        texture::Surface::Marble => Surface::Marble,
+        texture::Surface::Granite => Surface::Granite,
+        texture::Surface::Stripes => Surface::Stripes,
+    };
+    Material {
+        surface,
+        base: format_color(source.base),
+        accent: format_color(source.accent),
+        reflection: (f64::from(source.reflection.clamp(0.0, 1.0)) * 1000.0).round() / 1000.0,
+    }
 }
 
 /// Returns the examples of the geometry crate.

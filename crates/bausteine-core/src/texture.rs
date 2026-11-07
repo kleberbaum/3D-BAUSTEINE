@@ -9,6 +9,8 @@
 //! combo box, `Fill_CB3_Texi` of `POV.bas`. The table keeps their names, so
 //! an exported scene renders in POV-Ray as before, and gives each a
 //! [`Material`] that the ray tracer in the browser approximates it with.
+//! Twenty of the names are pigments in `textures.inc`, which [`PIGMENTS`]
+//! lists, so the export can wrap them where version 1.3 did not.
 
 /// The family of a surface, which decides how the ray tracer shades it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -448,6 +450,45 @@ pub const TEXTURES: [Texture; 43] = [
         0.0,
     ),
 ];
+
+/// The names of [`TEXTURES`] that `textures.inc` of POV-Ray declares as a
+/// pigment and not as a texture.
+///
+/// Version 1.3 writes every name of its list as a texture, `texture {Jade}}`,
+/// but a texture of POV-Ray takes a pigment only inside `pigment { }`, so
+/// POV-Ray rejects the twenty names below in that place. The export wraps
+/// them, and the list of names and its order stay those of version 1.3.
+pub const PIGMENTS: [&str; 20] = [
+    "Brown_Agate",
+    "Sapphire_Agate",
+    "Pink_Granite",
+    "White_Marble",
+    "Red_Marble",
+    "Jade",
+    "Cherry_Wood",
+    "Tan_Wood",
+    "Pine_Wood",
+    "Dark_Wood",
+    "White_Wood",
+    "DMFWood1",
+    "DMFWood2",
+    "DMFWood3",
+    "DMFWood4",
+    "DMFWood5",
+    "Candy_Cane",
+    "Peel",
+    "Blue_Sky2",
+    "Blood_Sky",
+];
+
+impl Texture {
+    /// Returns whether `textures.inc` declares the texture as a pigment,
+    /// which the export then writes as `texture { pigment { Jade } }`.
+    #[must_use]
+    pub fn is_pigment(&self) -> bool {
+        PIGMENTS.contains(&self.name)
+    }
+}
 
 /// Returns the index of the texture named `name` in [`TEXTURES`], or `None`.
 #[must_use]

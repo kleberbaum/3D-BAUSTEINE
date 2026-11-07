@@ -14,6 +14,12 @@
 //! about x `rotate <0, 0, angle>`. The turns are written one by one in the
 //! order the matrix of an item applies them, z first, so the export draws
 //! what the views show.
+//!
+//! A body or a group with a texture wears it as `texture { Gold_Metal }`.
+//! Twenty names of the list of version 1.3 are pigments in `textures.inc`,
+//! such as `Jade`, the marbles and most of the woods, and POV-Ray reads a
+//! pigment inside a texture only as `pigment { }`, so the export writes
+//! `texture { pigment { Jade } }` for them, see [`crate::texture::PIGMENTS`].
 
 use core::fmt::Write as _;
 
@@ -52,14 +58,20 @@ impl Default for Shot {
 }
 
 /// The head of the scene file: its layout and when it was written.
+///
+/// The page formats the date and the time as `Def_Pov` of version 1.3 wrote
+/// `Date` and `Time` of Visual Basic in a German locale, the date as
+/// `TT.MM.JJJJ` and the time as `HH:MM:SS`, for example `06.03.2002` and
+/// `21:03:31`. The export takes them as they come and writes a line break
+/// in them as a blank, so they never leave their line of comment.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Header<'a> {
     /// Whether the head takes the layout of `Def_Pov` of version 1.3, with
     /// an empty line after every line of comment.
     pub classic: bool,
-    /// The date the page writes the file, as the page formats it.
+    /// The date the page writes the file, as `TT.MM.JJJJ`.
     pub date: Option<&'a str>,
-    /// The time the page writes the file, as the page formats it.
+    /// The time the page writes the file, as `HH:MM:SS`.
     pub time: Option<&'a str>,
 }
 
@@ -150,8 +162,8 @@ struct Writer<'a> {
 /// Writes the comment of the head, the includes, the sky, the camera, the
 /// light and the room of `Def_Pov`.
 fn header(out: &mut String, shot: &Shot, head: &Header<'_>) {
-    let date = head.date.unwrap_or("");
-    let time = head.time.unwrap_or("");
+    let date = one_line(head.date.unwrap_or(""));
+    let time = one_line(head.time.unwrap_or(""));
     if head.classic {
         // Def_Pov writes each comment with appCr, which ends it with two
         // line breaks.
@@ -226,7 +238,7 @@ impl Writer<'_> {
             out,
             "\n// Neuer Körper {}: {}",
             index + 1,
-            source.name.replace(['\n', '\r'], " ")
+            one_line(&source.name)
         );
         let children: Vec<usize> = self.scene.children(Some(index)).collect();
         if children.is_empty() {
@@ -254,7 +266,7 @@ impl Writer<'_> {
             out,
             "\n{pad}// Objekt {}: {}",
             index + 1,
-            source.name.replace(['\n', '\r'], " ")
+            one_line(&source.name)
         );
         match source.kind {
             Kind::Body(body) => {
@@ -362,10 +374,15 @@ fn transform(out: &mut String, source: &Item, pad: &str) {
     let _ = writeln!(out, " translate {}", point(source.position));
 }
 
-/// Writes the texture of `source`, or its colour, `pov_tex`.
+/// Writes the texture of `source`, or its colour, `pov_tex`, with a
+/// pigment of `textures.inc` wrapped in `pigment { }`.
 fn surface(out: &mut String, source: &Item, pad: &str) {
     if let Some(texture) = source.texture.and_then(|i| TEXTURES.get(i)) {
-        let _ = writeln!(out, "{pad}  texture {{ {} }}", texture.name);
+        if texture.is_pigment() {
+            let _ = writeln!(out, "{pad}  texture {{ pigment {{ {} }} }}", texture.name);
+        } else {
+            let _ = writeln!(out, "{pad}  texture {{ {} }}", texture.name);
+        }
     } else {
         let [r, g, b] = source.color;
         let _ = writeln!(
@@ -376,6 +393,11 @@ fn surface(out: &mut String, source: &Item, pad: &str) {
             number(b)
         );
     }
+}
+
+/// Returns `text` with every line break as a blank, for a line of comment.
+fn one_line(text: &str) -> String {
+    text.replace(['\n', '\r'], " ")
 }
 
 /// Returns the point `p` of the lesson as a vector of POV-Ray.

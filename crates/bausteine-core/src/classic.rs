@@ -200,7 +200,10 @@ pub fn wires(scene: &Scene, camera: &Camera) -> Vec<f32> {
         let item = &scene.items[index];
         let matrix = scene.world_matrix(index);
         let color = item.material().base;
-        if body == Body::Sphere && camera.parallel {
+        // A normal view draws a sphere as one circle, `drawKugel`, and the
+        // oblique view as its wire model, also through the cavalier camera
+        // of version 1.3, which projects in parallel too.
+        if body == Body::Sphere && camera.view != View::Oblique {
             sphere_circle(&mut out, &matrix, camera, color);
             continue;
         }

@@ -21,7 +21,7 @@
 //! | `mesh <code> [hole]` | The counts of the polygon model of a unit body |
 //! | `matrix <packed> <index>` | The matrix of an item in the scene, by columns |
 //! | `role <packed> <index>` | Whether an item adds or cuts material, and its depth |
-//! | `pov <packed> [eye] [target]` | The scene file of POV-Ray, each point as `x,y,z` |
+//! | `pov <packed> [eye] [target] [flags]` | The scene file of POV-Ray, each point as `x,y,z` |
 //! | `project <view> <x> <y> <z> [w] [h]` | The pixel of a point in a view |
 //! | `unproject <view> <x> <y> [w] [h]` | The point under a pixel of a parallel view |
 //! | `lines <packed> <view> [w] [h]` | The segments of the edges of a view with their styles |
@@ -29,9 +29,15 @@
 //! | `faces <packed>` | The counts of the face vertices |
 //! | `pick <packed> <view> <x> <y> [w] [h]` | The item under a pixel, or -1 |
 //! | `program <packed>` | The nodes of the program of the ray tracer |
-//! | `textures` | Every texture with its group and material |
+//! | `textures` | Every texture with its group, whether it is a pigment, and its material |
 //! | `classic-raster <view> [w] [h]` | The marks and the dots of the raster of the classic look |
 //! | `classic-wires <packed> <view> [w] [h]` | The wires of the classic look with their colours |
+//!
+//! The flags of `pov` choose the head of the file as the field `pov` of the
+//! API does: `--classic` takes the layout of `Def_Pov` of version 1.3,
+//! `--date 06.03.2002` and `--time 21:03:31` give the date and the time the
+//! page hands in, as `TT.MM.JJJJ` and `HH:MM:SS`. A flag may stand anywhere
+//! after the subcommand, and `--date=06.03.2002` works as well.
 //!
 //! The views are numbered as `View::ALL`: 0 the front view, 1 the side view,
 //! 2 the top view and 3 the oblique view. The parallel views use the default
@@ -317,8 +323,51 @@ fn role(rest: &[String]) -> Result<String, String> {
     ))
 }
 
+/// The head of the scene file that the flags of `pov` ask for.
+#[derive(Default)]
+struct HeadFlags {
+    /// Whether `--classic` stands.
+    classic: bool,
+    /// The value of `--date`.
+    date: Option<String>,
+    /// The value of `--time`.
+    time: Option<String>,
+}
+
+/// Returns the arguments of `rest` that are no flag, and the flags of the head.
+fn head_flags(rest: &[String]) -> Result<(Vec<String>, HeadFlags), String> {
+    let mut positional = Vec::new();
+    let mut flags = HeadFlags::default();
+    let mut args = rest.iter();
+    while let Some(arg) = args.next() {
+        let (name, inline) = match arg.split_once('=') {
+            Some((name, value)) if name.starts_with("--") => (name, Some(value)),
+            _ => (arg.as_str(), None),
+        };
+        let mut value = |what: &str| {
+            inline
+                .map(String::from)
+                .or_else(|| args.next().cloned())
+                .ok_or_else(|| format!("the flag {name} takes a {what}"))
+        };
+        match name {
+            "--classic" if inline.is_none() => flags.classic = true,
+            "--date" => flags.date = Some(value("date as TT.MM.JJJJ")?),
+            "--time" => flags.time = Some(value("time as HH:MM:SS")?),
+            flag if flag.starts_with("--") => {
+                return Err(format!(
+                    "unknown flag `{arg}`, pov takes --classic, --date and --time"
+                ));
+            }
+            _ => positional.push(arg.clone()),
+        }
+    }
+    Ok((positional, flags))
+}
+
 fn export(rest: &[String]) -> Result<String, String> {
-    let scene = scene(arg(rest, 0)?)?;
+    let (rest, flags) = head_flags(rest)?;
+    let scene = scene(arg(&rest, 0)?)?;
     let mut shot = pov::Shot::default();
     if let Some(eye) = rest.get(1) {
         shot.eye = point(eye)?;
@@ -326,7 +375,12 @@ fn export(rest: &[String]) -> Result<String, String> {
     if let Some(target) = rest.get(2) {
         shot.target = point(target)?;
     }
-    Ok(json_string(&pov::export(&scene, &shot)))
+    let head = pov::Header {
+        classic: flags.classic,
+        date: flags.date.as_deref(),
+        time: flags.time.as_deref(),
+    };
+    Ok(json_string(&pov::export_with(&scene, &shot, &head)))
 }
 
 /// Returns the view of the argument `at`.
@@ -512,9 +566,10 @@ fn textures() -> String {
         .enumerate()
         .map(|(i, t)| {
             format!(
-                "{{\"index\":{i},\"name\":{},\"group\":{},\"surface\":{},\"base\":{},\"accent\":{},\"reflection\":{}}}",
+                "{{\"index\":{i},\"name\":{},\"group\":{},\"pigment\":{},\"surface\":{},\"base\":{},\"accent\":{},\"reflection\":{}}}",
                 json_string(t.name),
                 json_string(t.group),
+                t.is_pigment(),
                 t.material.surface.code(),
                 json_numbers(&t.material.base),
                 json_numbers(&t.material.accent),

@@ -15,16 +15,17 @@
 mod model;
 
 use aosabi::prelude::*;
-use bausteine_core::{body, examples, texture};
+use bausteine_core::{body, examples};
 
 pub use model::{
-    Example, Item, ItemPatch, Kind, KindInfo, ListLine, NewItem, Point, Scene, Texture, Vector,
+    Example, Item, ItemPatch, Kind, KindInfo, ListLine, Material, NewItem, Point, Scene, Surface,
+    Texture, Vector,
 };
 
 use model::{
     MAX_ITEMS, bad_input, can_hold, can_place, checked, checked_color, checked_name,
     checked_texture, example_list, from_geometry, geometry_kind, keep, kind_family, next_id,
-    no_scene, order, scenes, subtree,
+    no_scene, order, scenes, subtree, texture_list,
 };
 
 /// The queries of 3D-Bausteine.
@@ -63,15 +64,10 @@ impl Query {
             .collect()
     }
 
-    /// Lists the standard textures of POV-Ray an item can wear.
+    /// Lists the standard textures of POV-Ray an item can wear, each with the
+    /// material the ray tracer in the browser renders it with.
     pub fn textures(&self) -> Vec<Texture> {
-        texture::TEXTURES
-            .iter()
-            .map(|t| Texture {
-                name: String::from(t.name),
-                group: String::from(t.group),
-            })
-            .collect()
+        texture_list()
     }
 
     /// Lists the example scenes a class starts from.
@@ -105,12 +101,16 @@ impl Mutation {
         Ok(keep(from_geometry(name, &source)))
     }
 
-    /// Renames a scene and returns it.
+    /// Renames a scene and returns it. A name of nothing but blanks is refused.
     /// @param id The id of the scene.
     /// @param name The new name.
     pub fn rename_scene(&self, id: ID, name: String) -> Result<Scene> {
+        let name = checked_name(&name);
         change(&id, |scene| {
-            scene.name = checked_name(&name);
+            if name.is_empty() {
+                return Err(bad_input("Eine Szene braucht einen Namen", "name"));
+            }
+            scene.name = name;
             Ok(())
         })
     }
@@ -221,10 +221,14 @@ impl Mutation {
     }
 
     /// Removes an item with everything in its groups and returns the scene.
+    /// An id the scene does not hold is refused and counts no change.
     /// @param scene The id of the scene.
     /// @param id The id of the item.
     pub fn remove_item(&self, scene: ID, id: ID) -> Result<Scene> {
         change(&scene, |target| {
+            if !target.items.iter().any(|item| item.id == id) {
+                return Err(bad_input("Dieses Objekt gibt es nicht", "id"));
+            }
             let gone = subtree(target, &id);
             target.items.retain(|item| !gone.contains(&item.id));
             Ok(())

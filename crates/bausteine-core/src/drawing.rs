@@ -267,8 +267,9 @@ fn intersect(origin: Vec3, direction: Vec3, a: Vec3, b: Vec3, c: Vec3) -> Option
 ///
 /// A parallel view shows the grid of its plane of projection over the whole
 /// viewport, with a line every unit and a stronger one every five, as the
-/// background raster of `grid` in `3D_bau.frm`. The oblique view shows the
-/// ground plane from zero to ten and the axes of `D3_Achse`.
+/// background raster of `grid` in `3D_bau.frm`, and the two axes that lie in
+/// that plane from one edge of the viewport to the other. The oblique view
+/// shows the ground plane from zero to ten and the axes of `D3_Achse`.
 #[must_use]
 pub fn grid(camera: &Camera) -> Vec<f32> {
     let mut out = Vec::new();
@@ -318,22 +319,30 @@ pub fn grid(camera: &Camera) -> Vec<f32> {
         (Vec3::Z, Style::AxisZ),
     ] {
         let (su, sv) = (axis.dot(u), axis.dot(v));
-        let reach = if su > 0.5 {
-            hi_u
-        } else if su < -0.5 {
-            -lo_u
-        } else if sv > 0.5 {
-            hi_v
-        } else if sv < -0.5 {
-            -lo_v
-        } else {
+        let Some((from, to)) = axis_span(su, lo_u, hi_u).or_else(|| axis_span(sv, lo_v, hi_v))
+        else {
             continue;
         };
-        if reach > 0.0 {
-            segment(&mut out, Vec3::ZERO, axis * reach, style);
-        }
+        segment(&mut out, axis * from, axis * to, style);
     }
     out
+}
+
+/// Returns the span of an axis that runs `along` one direction of the plane
+/// of projection, in units of the axis, over the extent `lo` to `hi` the
+/// grid covers in that direction.
+///
+/// The axis runs through the whole view, from the edge its negative half
+/// points to as far as the edge of its positive half, as P-035 asks of the
+/// modern look. An axis that does not lie in that direction answers `None`.
+fn axis_span(along: f32, lo: f32, hi: f32) -> Option<(f32, f32)> {
+    if along > 0.5 {
+        Some((lo, hi))
+    } else if along < -0.5 {
+        Some((-hi, -lo))
+    } else {
+        None
+    }
 }
 
 /// Returns the style of a grid line at the coordinate `at`.
