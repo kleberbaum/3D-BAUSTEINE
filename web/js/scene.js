@@ -5,6 +5,10 @@
 // page loads the scene and the lines of its list OBJEKTE again, keeps a
 // copy on the shelf of the browser, and keeps the items before the change
 // for an undo.
+//
+// The changes, the undo and the redo run one after the other. Each one
+// starts once the answer of the one before has landed, so two quick clicks
+// make two steps of the history, each with the items it really changed.
 
 import { app, emit, itemById, safe, snapshotItems } from './state.js';
 
@@ -17,7 +21,7 @@ export async function setScene(scene) {
   const end = app.lines[app.line]?.end ?? false;
   const wasRaster = app.line === 0;
   app.scene = scene;
-  if (app.sceneKey) app.shelf.put(app.sceneKey, scene);
+  if (app.sceneKey) app.shelf.put(app.sceneKey, scene, app.povCamera);
   app.lines = (await safe(() => app.store.list(scene.id))) ?? [{ text: '0 Raster', item: null, end: false }];
   // The selection follows its item, or its end line, through the new list.
   if (id != null) {
@@ -43,41 +47,71 @@ export function remember(before) {
   emit('history');
 }
 
+/** The end of the last change in the queue, which the next change waits for. */
+let queue = Promise.resolve();
+
+/** Runs `task` once every change before it has ended, and answers what it answers. */
+function serial(task) {
+  const run = queue.then(task);
+  queue = run.catch(() => {});
+  return run;
+}
+
 /**
  * Runs the change `action` on the service, keeps the items before it for
  * an undo, loads the scene after it, and answers what `action` answered,
- * or null where it failed.
+ * or null where it failed. The change waits for the changes before it, so
+ * `action` reads the scene and the selection they left. `settle` runs
+ * with the answer once the scene is loaded and before the next change
+ * starts, for the selection the change leaves behind.
  */
-export async function commit(action) {
-  const before = snapshotItems();
-  const result = await safe(action);
-  if (result === null) {
+export function commit(action, settle = null) {
+  return serial(async () => {
+    const before = snapshotItems();
+    const result = await safe(action);
+    if (result === null) {
+      await reloadScene();
+      return null;
+    }
+    remember(before);
     await reloadScene();
-    return null;
-  }
-  remember(before);
-  await reloadScene();
-  return result;
+    settle?.(result);
+    return result;
+  });
 }
 
-/** Undoes the last change. */
-export async function undo() {
-  const items = app.history.pop();
-  if (!items) return;
-  app.future.push(snapshotItems());
-  const scene = await safe(() => app.store.replaceItems(app.scene.id, items));
-  if (scene) await setScene(scene);
-  emit('history');
+/** Undoes the last change. A change the service refuses leaves both stacks as they were. */
+export function undo() {
+  return serial(async () => {
+    const items = app.history.pop();
+    if (!items) return;
+    const now = snapshotItems();
+    const scene = await safe(() => app.store.replaceItems(app.scene.id, items));
+    if (scene) {
+      app.future.push(now);
+      await setScene(scene);
+    } else {
+      app.history.push(items);
+    }
+    emit('history');
+  });
 }
 
-/** Does the last undone change again. */
-export async function redo() {
-  const items = app.future.pop();
-  if (!items) return;
-  app.history.push(snapshotItems());
-  const scene = await safe(() => app.store.replaceItems(app.scene.id, items));
-  if (scene) await setScene(scene);
-  emit('history');
+/** Does the last undone change again. A change the service refuses leaves both stacks as they were. */
+export function redo() {
+  return serial(async () => {
+    const items = app.future.pop();
+    if (!items) return;
+    const now = snapshotItems();
+    const scene = await safe(() => app.store.replaceItems(app.scene.id, items));
+    if (scene) {
+      app.history.push(now);
+      await setScene(scene);
+    } else {
+      app.future.push(items);
+    }
+    emit('history');
+  });
 }
 
 /** Selects the line `index` of the list OBJEKTE, -1 for none. */

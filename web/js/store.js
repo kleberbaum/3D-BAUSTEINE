@@ -3,6 +3,8 @@
 // 3D-Bausteine store.js: the scenes of the page. The service of Aosabi in
 // the Web Worker keeps them and answers over GraphQL, and the shelf keeps a
 // copy of each in the storage of the browser, so a scene survives a reload.
+// Under the address ?debug the store writes every request and its answer
+// into a log, which the test notebooks read.
 
 /**
  * The kinds of items with their type codes of version 1.3 and the texts of
@@ -29,6 +31,28 @@ export const KINDS = [
 export function kindInfo(kind) {
   return KINDS.find((k) => k.kind === kind) ?? KINDS[0];
 }
+
+/**
+ * The entries of CB1 that close a group and name no kind of item: CSG-Ende
+ * closes the innermost open group of the CSG, Neu_Ende the new body.
+ */
+export const ENDS = [
+  { end: 'csg', label: 'CSG-Ende' },
+  { end: 'declare', label: 'Neu_Ende' },
+];
+
+/**
+ * The fifteen entries of CB1 in the order of version 1.3, `Fill_CB1_Objekt`:
+ * the eight bodies, the four groups of the CSG and CSG-Ende, then #Neu and
+ * Neu_Ende. Neither the raster nor Ebene of the body bar is one of them.
+ */
+export const CB1_ENTRIES = [
+  ...KINDS.filter((k) => !k.group && k.kind !== 'INSTANCE').map((k) => k.label),
+  ...KINDS.filter((k) => k.group && k.kind !== 'DECLARE').map((k) => k.label),
+  ENDS[0].label,
+  ...KINDS.filter((k) => k.kind === 'DECLARE').map((k) => k.label),
+  ENDS[1].label,
+];
 
 /** The values of one packed item, ITEM_STRIDE of bausteine-core. */
 const STRIDE = 20;
@@ -95,13 +119,23 @@ export function cloneItems(items) {
  * question is one GraphQL request through the bridge.
  */
 export class WorkerStore {
-  constructor(bridge) {
+  /**
+   * Takes the bridge to the worker and, where given, the array `log` that
+   * receives every request as `{query, variables, answer}`.
+   */
+  constructor(bridge, { log = null } = {}) {
     this.bridge = bridge;
+    this.log = log;
   }
 
   /** Sends one GraphQL request and answers its data, or throws its first error. */
   async request(query, variables = {}) {
     const body = await this.bridge.graphql(query, variables);
+    if (this.log) {
+      this.log.push({ query, variables, answer: body });
+      // A log nobody drains keeps the newest thousand requests.
+      if (this.log.length > 1000) this.log.splice(0, this.log.length - 1000);
+    }
     if (body.errors?.length) throw new Error(body.errors[0].message);
     return body.data;
   }
@@ -211,11 +245,15 @@ const SHELF = 'bausteine.shelf.v2';
  * The copies of the scenes in the storage of the browser, each under a key
  * of its own, which the address of the page carries. The service in the
  * worker starts empty with every visit, so the page puts each scene back
- * from the shelf when it opens it.
+ * from the shelf when it opens it. A copy holds the name, the items, the
+ * camera of the export and the time it was kept.
  */
 export class Shelf {
   constructor() {
     this.scenes = this.read();
+    // Called once, the first time the storage of the browser refuses a copy.
+    this.onFull = null;
+    this.full = false;
   }
 
   read() {
@@ -227,11 +265,18 @@ export class Shelf {
     }
   }
 
+  /** Writes the newest fifty copies into the storage, and answers whether the storage took them. */
   write() {
     try {
       localStorage.setItem(SHELF, JSON.stringify(this.scenes.slice(-50)));
+      return true;
     } catch {
-      // A full or blocked storage keeps the scenes for this visit alone.
+      // A full or blocked storage keeps the scenes for this visit alone, and says so once.
+      if (!this.full) {
+        this.full = true;
+        this.onFull?.();
+      }
+      return false;
     }
   }
 
@@ -246,11 +291,17 @@ export class Shelf {
     return this.scenes.find((s) => s.key === key) ?? null;
   }
 
-  /** Keeps a copy of `scene` under `key`, the newest last. */
-  put(key, scene) {
+  /** Keeps a copy of `scene` with the camera of the export `povCamera` under `key`, the newest last. */
+  put(key, scene, povCamera = null) {
     this.scenes = this.scenes.filter((s) => s.key !== key);
-    this.scenes.push({ key, name: scene.name, items: cloneItems(scene.items), saved: Date.now() });
-    this.write();
+    this.scenes.push({
+      key,
+      name: scene.name,
+      items: cloneItems(scene.items),
+      povCamera: povCamera ? structuredClone(povCamera) : null,
+      saved: Date.now(),
+    });
+    return this.write();
   }
 
   /** Forgets the scene `key`. */

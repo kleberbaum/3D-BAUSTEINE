@@ -4,13 +4,18 @@
 // the scene of the page with its list OBJEKTE, the selection, the zoom of
 // the views, the look, the history for an undo, and the small helpers the
 // modules use: the status field of F5, the message boxes and the events by
-// which a module tells the others that something changed.
+// which a module tells the others that something changed. The nineteen
+// events are listed in EVENTS, and under the address ?debug the page warns
+// in the console about any other name, so a typing error shows at once.
 
 /** Returns the first element that matches `selector` inside `root`. */
 export const $ = (selector, root = document) => root.querySelector(selector);
 
 /** Returns every element that matches `selector` inside `root`. */
 export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+/** Whether the address carries ?debug, which opens the door for the console and the test notebooks. */
+export const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
 
 /** The defaults of the tab Einstellung, `Def_Datei` of version 1.3. */
 export const DEFAULT_PATHS = {
@@ -66,8 +71,13 @@ export const app = {
   zoomf: 12,
   /** The 3D zoom `d3zoomf` of version 1.3, which starts at 10. */
   d3zoomf: 10,
-  /** The centre of the normal views in the modern look. */
-  center: { x: 5, y: 5, z: 4 },
+  /**
+   * The centre of the normal views in the modern look. The modern look
+   * centres the origin, so that every octant shows, and views.js sets it
+   * again when it wires the views and for every new empty scene. The
+   * classic look places its views by the shared centre of its own.
+   */
+  center: { x: 0, y: 0, z: 0 },
   orbit: { x: 2.5, y: 2.5, z: 1.5, yaw: 45, pitch: 24, distance: 22 },
   turn: { x: 0, y: 0, z: 0 },
   raytrace: false,
@@ -75,28 +85,66 @@ export const app = {
   maximized: null,
   /** The camera of the export, null for the camera of version 1.3. */
   povCamera: null,
+  /**
+   * The settings of the dialog Bildschirmeinstellungen. The virtual screen
+   * of the classic look is 1024 by 768 until the user picks another one or
+   * the browser window, as the thesis lays out `Form_Set` on that screen.
+   */
   settings: {
     snap: 1,
     geo: '#008080',
-    screen: 'window',
+    screen: '1024x768',
     ...stored('bausteine.display', {}),
   },
   paths: { ...DEFAULT_PATHS, ...stored('bausteine.einstellung', {}) },
   history: [],
   future: [],
   palette: 0,
+  /**
+   * The GraphQL requests of the page as `{query, variables, answer}`, the
+   * oldest first, filled under the address ?debug alone. A test notebook
+   * drains it to see what a click sent to the service.
+   */
+  log: [],
 };
+
+/**
+ * The events of the page with their details, section 5.2 of the plan:
+ * `scene` and `select` after an answer and a selection, `armed` with the
+ * entry of CB1 or null, `mode` with the mode, `mark` with the view and the
+ * point of a click, `marks` for the crosses, `hover` with the view and the
+ * point under the pointer, `layout`, `look` with the look, `tab` with the
+ * tab, `paths`, `history`, `save-picture` with a view or null, the four
+ * `win-*` with the id of a window, `zoom` with `{zoomf, d3zoomf}` and
+ * `window` with `{id, hidden}`.
+ */
+export const EVENTS = new Set([
+  'scene', 'select', 'armed', 'mode', 'mark', 'marks', 'hover', 'layout', 'look', 'tab', 'paths',
+  'history', 'save-picture', 'win-min', 'win-max', 'win-help', 'win-close', 'zoom', 'window',
+]);
 
 /** The events of the page, one EventTarget the modules share. */
 const events = new EventTarget();
 
+/** The names outside EVENTS the console was already told about. */
+const strangers = new Set();
+
+/** Warns once under ?debug about the event `name` that EVENTS does not list. */
+function vet(name) {
+  if (!DEBUG || EVENTS.has(name) || strangers.has(name)) return;
+  strangers.add(name);
+  console.warn(`Das Ereignis ${name} steht nicht in der Liste EVENTS von state.js`);
+}
+
 /** Calls `listener` with the detail of every event `name`. */
 export function on(name, listener) {
+  vet(name);
   events.addEventListener(name, (event) => listener(event.detail));
 }
 
 /** Sends the event `name` with `detail` to every listener. */
 export function emit(name, detail) {
+  vet(name);
   events.dispatchEvent(new CustomEvent(name, { detail }));
 }
 
