@@ -15,6 +15,7 @@
 
 use crate::gpu::{
     CAMERA_VALUES,
+    Failure,
     Frame,
     Gpu, //
 };
@@ -61,6 +62,10 @@ pub struct Renderer {
     look: Look,
     /// The 3D zoom, `d3zoomf` of version 1.3 divided by its start value 10.
     oblique_zoom: f32,
+    /// The CSS pixels to the right and down by which the user moved the
+    /// classic Schrägriss from where `D3_Refresh` of version 1.3 puts its
+    /// origin, half the width and 70 percent of the height.
+    oblique_pan: [f32; 2],
     /// The turn of the scene in the oblique view about the x, y and z axes
     /// in degrees, the tab Kamera of version 1.3.
     turn: Vec3,
@@ -76,8 +81,9 @@ impl Renderer {
     ///
     /// # Errors
     ///
-    /// Returns a German message where the browser offers no WebGPU.
-    pub async fn new(canvas: web_sys::OffscreenCanvas) -> Result<Self, String> {
+    /// Returns the failure, with its German message, where the browser
+    /// offers no WebGPU.
+    pub async fn new(canvas: web_sys::OffscreenCanvas) -> Result<Self, Failure> {
         let (width, height) = (canvas.width(), canvas.height());
         let gpu = Gpu::new(canvas, width, height).await?;
         Ok(Self {
@@ -93,6 +99,7 @@ impl Renderer {
             raytrace: false,
             look: Look::Modern,
             oblique_zoom: 1.0,
+            oblique_pan: [0.0; 2],
             turn: Vec3::ZERO,
             ink: Ink::Screen,
             stale: true,
@@ -167,6 +174,16 @@ impl Renderer {
         self.oblique_zoom = zoom.clamp(0.05, 20.0);
     }
 
+    /// Moves the picture of the classic Schrägriss by `x` CSS pixels to the
+    /// right and `y` down from where version 1.3 puts its origin. The camera
+    /// of version 1.3 has no target that a drag could move, so the drawing
+    /// shifts on the screen as a whole. A value that is not finite counts as
+    /// zero, and the modern look, whose camera has a target, ignores it.
+    pub fn set_oblique_pan(&mut self, x: f32, y: f32) {
+        let finite = |v: f32| if v.is_finite() { v } else { 0.0 };
+        self.oblique_pan = [finite(x), finite(y)];
+    }
+
     /// Turns the scene in the oblique view about the origin by the angles
     /// `x`, `y` and `z` in degrees, for display alone.
     pub fn set_turn(&mut self, x: f32, y: f32, z: f32) {
@@ -192,12 +209,15 @@ impl Renderer {
     }
 
     /// Draws the four views into a picture of its own and answers its
-    /// pixels, as `ImageData` takes them, for saving the rendered image.
+    /// pixels, as `ImageData` takes them, for saving the rendered image:
+    /// red, green, blue and alpha, rows packed tightly, alpha 255, whatever
+    /// the format of the surface.
     ///
     /// # Errors
     ///
-    /// Returns a German message where the picture cannot be read back.
-    pub async fn snapshot(&mut self) -> Result<Vec<u8>, String> {
+    /// Returns the failure, with its German message, where the picture
+    /// cannot be read back.
+    pub async fn snapshot(&mut self) -> Result<Vec<u8>, Failure> {
         self.refresh();
         let views = self.views();
         let frames = Self::frames(&views);
@@ -238,6 +258,71 @@ impl Renderer {
             .bounds()
             .map_or_else(Vec::new, |(lo, hi)| [lo.to_array(), hi.to_array()].concat())
     }
+
+    /// Returns what the page told the renderer last, as the renderer keeps
+    /// it, with the limits applied, for the dump of the worker.
+    #[must_use]
+    pub fn settings(&self) -> Settings {
+        let (width, height) = self.gpu.size();
+        Settings {
+            width,
+            height,
+            scale: self.scale,
+            viewports: self.viewports,
+            ortho: self.ortho,
+            orbit: self.orbit,
+            oblique_zoom: self.oblique_zoom,
+            oblique_pan: self.oblique_pan,
+            turn: self.turn,
+            dark: self.dark,
+            classic: self.look == Look::Classic,
+            inverted: self.ink == Ink::Print,
+            raytrace: self.raytrace,
+            adapter: String::from(self.gpu.adapter()),
+        }
+    }
+
+    /// Frees the device of WebGPU, after which the renderer is gone.
+    pub fn close(self) {
+        self.gpu.close();
+    }
+}
+
+/// What the page told the renderer last, as the renderer keeps it.
+#[derive(Clone, Debug, PartialEq)]
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "each switch is one field of the message state, which the dump repeats"
+)]
+pub struct Settings {
+    /// The width of the canvas in device pixels.
+    pub width: u32,
+    /// The height of the canvas in device pixels.
+    pub height: u32,
+    /// The device pixels of one CSS pixel.
+    pub scale: f32,
+    /// The viewport of each view in CSS pixels, in the order of [`View::ALL`].
+    pub viewports: [[f32; 4]; 4],
+    /// The shared centre and scale of the parallel views.
+    pub ortho: Ortho,
+    /// The camera of the oblique view of the modern look.
+    pub orbit: Orbit,
+    /// The 3D zoom, `d3zoomf` of version 1.3 divided by 10.
+    pub oblique_zoom: f32,
+    /// The shift of the classic Schrägriss in CSS pixels to the right and down.
+    pub oblique_pan: [f32; 2],
+    /// The turn of the oblique view in degrees, the tab Kamera.
+    pub turn: Vec3,
+    /// Whether the dark theme is on.
+    pub dark: bool,
+    /// Whether the views draw the classic look of version 1.3.
+    pub classic: bool,
+    /// Whether the classic look draws inverted, as the thesis prints it.
+    pub inverted: bool,
+    /// Whether the ray tracer draws the oblique view.
+    pub raytrace: bool,
+    /// The name of the adapter as the browser tells it, often empty.
+    pub adapter: String,
 }
 
 /// What one view draws, owned, before it becomes a [`Frame`].
@@ -383,7 +468,18 @@ impl Renderer {
         }
         match view {
             View::Oblique if self.look == Look::Classic => {
-                Some(Camera::cavalier(self.oblique_zoom, width, height).turned(self.turn))
+                let mut camera =
+                    Camera::cavalier(self.oblique_zoom, width, height).turned(self.turn);
+                // The cavalier camera projects in parallel, so its fourth row
+                // is (0, 0, 0, 1) and the translation of the fourth column
+                // moves the whole picture in the space of the clip. The
+                // turn about the origin leaves that column as it is, and
+                // the pick and the cameras of the frame read the matrix, so
+                // both follow the shift.
+                let [x, y] = self.oblique_pan;
+                camera.view_proj.cols[3][0] += 2.0 * x / width;
+                camera.view_proj.cols[3][1] -= 2.0 * y / height;
+                Some(camera)
             }
             View::Oblique => {
                 let orbit = Orbit {

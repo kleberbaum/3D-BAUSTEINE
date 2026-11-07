@@ -4,6 +4,18 @@
  */
 
 //! The engine and the renderer, joined for the script of the Web Worker.
+//!
+//! The script `web/js/worker.js` turns each message of the page into one
+//! call of a [`Worker`] method, and `Documentation/worker.md` names the
+//! messages with their fields. A method that fails rejects with an `Error`
+//! of JavaScript whose message is German, for the person at the page, and
+//! whose property `detail` holds the text of Rust, of wgpu or of the
+//! browser, for the console. A panic is logged to the console and handed
+//! to the function `bausteinePanic` of the global scope of the worker where
+//! the script defines one, so the script answers the page with a fatal
+//! error before the module of WebAssembly traps.
+
+use std::fmt::Write as _;
 
 use bausteine_core::{
     packed,
@@ -16,6 +28,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     engine::Engine,
+    gpu::Failure,
     renderer::Renderer, //
 };
 
@@ -46,16 +59,21 @@ impl Worker {
     ///
     /// # Errors
     ///
-    /// Rejects with a German message where the boot fails or the browser
-    /// offers no WebGPU in a worker.
+    /// Rejects with an `Error` of a German message and a `detail` where the
+    /// boot fails or the browser offers no WebGPU in a worker.
     pub async fn create(canvas: web_sys::OffscreenCanvas) -> Result<Worker, JsValue> {
         std::panic::set_hook(Box::new(|info| {
-            web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
+            let text = info.to_string();
+            web_sys::console::error_1(&JsValue::from_str(&text));
+            report_panic(&text);
         }));
-        let engine = Engine::boot().map_err(|e| JsValue::from_str(&e))?;
-        let renderer = Renderer::new(canvas)
-            .await
-            .map_err(|e| JsValue::from_str(&e))?;
+        let engine = Engine::boot().map_err(|e| {
+            error(&Failure::new(
+                "Der Dienst von 3D-Bausteine startet nicht",
+                e,
+            ))
+        })?;
+        let renderer = Renderer::new(canvas).await.map_err(|e| error(&e))?;
         Ok(Self {
             engine,
             renderer,
@@ -139,6 +157,12 @@ impl Worker {
         self.renderer.set_oblique_zoom(zoom);
     }
 
+    /// Moves the picture of the classic Schrägriss by `x` CSS pixels to the
+    /// right and `y` down from the origin of version 1.3.
+    pub fn set_oblique_pan(&mut self, x: f32, y: f32) {
+        self.renderer.set_oblique_pan(x, y);
+    }
+
     /// Turns the scene in the oblique view by the angles in degrees, for display alone.
     pub fn set_turn(&mut self, x: f32, y: f32, z: f32) {
         self.renderer.set_turn(x, y, z);
@@ -176,16 +200,105 @@ impl Worker {
         self.renderer.bounds()
     }
 
-    /// Draws the four views into a picture of its own and returns its pixels.
+    /// Draws the four views into a picture of its own and returns its
+    /// pixels: red, green, blue and alpha, rows packed tightly, alpha 255,
+    /// over the size that `dump` names.
     ///
     /// # Errors
     ///
-    /// Rejects with a German message where the picture cannot be read back.
+    /// Rejects with an `Error` of a German message and a `detail` where the
+    /// picture cannot be read back.
     pub async fn snapshot(&mut self) -> Result<Vec<u8>, JsValue> {
-        self.renderer
-            .snapshot()
-            .await
-            .map_err(|e| JsValue::from_str(&e))
+        self.renderer.snapshot().await.map_err(|e| error(&e))
+    }
+
+    /// Returns the revision of the shown scene the views draw, `-1` where
+    /// no scene is shown or the service keeps no such scene, so that a
+    /// frame tells which state of the scene it shows.
+    #[must_use]
+    pub fn revision(&self) -> i32 {
+        self.revision
+    }
+
+    /// Returns the state of the worker as the text of a JSON object, for the
+    /// test notebooks and the console: the shown scene with its revision and
+    /// the ids of its items, what the renderer was told last with its limits
+    /// applied, the selection, whether a body is being placed, the size of
+    /// the canvas and the adapter. The content of the scene is not in it,
+    /// since GraphQL answers that.
+    #[must_use]
+    pub fn dump(&self) -> String {
+        let s = self.renderer.settings();
+        let viewports: Vec<String> = s.viewports.iter().map(|v| numbers(v)).collect();
+        let ids: Vec<String> = self.ids.iter().map(|id| text(id)).collect();
+        let fields = [
+            ("shown", self.shown.as_deref().map_or_else(null, text)),
+            ("revision", self.revision.to_string()),
+            ("ids", format!("[{}]", ids.join(","))),
+            ("viewports", format!("[{}]", viewports.join(","))),
+            (
+                "ortho",
+                object(&[
+                    ("x", number(s.ortho.center.x)),
+                    ("y", number(s.ortho.center.y)),
+                    ("z", number(s.ortho.center.z)),
+                    ("ppu", number(s.ortho.pixels_per_unit)),
+                ]),
+            ),
+            (
+                "orbit",
+                object(&[
+                    ("x", number(s.orbit.target.x)),
+                    ("y", number(s.orbit.target.y)),
+                    ("z", number(s.orbit.target.z)),
+                    ("yaw", number(s.orbit.yaw)),
+                    ("pitch", number(s.orbit.pitch)),
+                    ("distance", number(s.orbit.distance)),
+                ]),
+            ),
+            ("obliqueZoom", number(s.oblique_zoom)),
+            (
+                "obliquePan",
+                object(&[
+                    ("x", number(s.oblique_pan[0])),
+                    ("y", number(s.oblique_pan[1])),
+                ]),
+            ),
+            (
+                "turn",
+                object(&[
+                    ("x", number(s.turn.x)),
+                    ("y", number(s.turn.y)),
+                    ("z", number(s.turn.z)),
+                ]),
+            ),
+            ("classic", s.classic.to_string()),
+            ("dark", s.dark.to_string()),
+            ("inverted", s.inverted.to_string()),
+            ("raytrace", s.raytrace.to_string()),
+            ("selected", self.selected.as_deref().map_or_else(null, text)),
+            ("preview", self.preview.is_some().to_string()),
+            (
+                "size",
+                object(&[
+                    ("width", s.width.to_string()),
+                    ("height", s.height.to_string()),
+                    ("scale", number(s.scale)),
+                ]),
+            ),
+            (
+                "adapter",
+                object(&[("name", text(&s.adapter)), ("backend", text("webgpu"))]),
+            ),
+        ];
+        object(&fields)
+    }
+
+    /// Frees the device of WebGPU with every buffer and texture on the GPU.
+    /// The object is gone after it, and the script ends the worker, which
+    /// takes the service and its scenes with it.
+    pub fn close(self) {
+        self.renderer.close();
     }
 }
 
@@ -224,4 +337,75 @@ impl Worker {
         self.renderer.set_scene(scene);
         self.renderer.set_selected(selected);
     }
+}
+
+/// Returns the `Error` of JavaScript of `failure`: its German message, and
+/// its detail as the property `detail`.
+fn error(failure: &Failure) -> JsValue {
+    let error = js_sys::Error::new(&failure.message);
+    let _ = js_sys::Reflect::set(
+        &error,
+        &JsValue::from_str("detail"),
+        &JsValue::from_str(&failure.detail),
+    );
+    error.into()
+}
+
+/// Hands the text of a panic to the function `bausteinePanic` of the global
+/// scope, where the script of the worker defines one.
+fn report_panic(text: &str) {
+    let global = js_sys::global();
+    let Ok(report) = js_sys::Reflect::get(&global, &JsValue::from_str("bausteinePanic")) else {
+        return;
+    };
+    if let Some(report) = report.dyn_ref::<js_sys::Function>() {
+        let _ = report.call1(&global, &JsValue::from_str(text));
+    }
+}
+
+/// Returns the JSON object of `fields`, each a name and the JSON text of its value.
+fn object(fields: &[(&str, String)]) -> String {
+    let fields: Vec<String> = fields
+        .iter()
+        .map(|(name, value)| format!("{}:{value}", text(name)))
+        .collect();
+    format!("{{{}}}", fields.join(","))
+}
+
+/// Returns the JSON array of `values`.
+fn numbers(values: &[f32]) -> String {
+    let values: Vec<String> = values.iter().map(|&v| number(v)).collect();
+    format!("[{}]", values.join(","))
+}
+
+/// Returns the JSON number of `value`, or `null` for a value that is not finite.
+fn number(value: f32) -> String {
+    if value.is_finite() {
+        value.to_string()
+    } else {
+        null()
+    }
+}
+
+/// Returns the JSON `null`.
+fn null() -> String {
+    String::from("null")
+}
+
+/// Returns the JSON string of `value`.
+fn text(value: &str) -> String {
+    let mut out = String::with_capacity(value.len() + 2);
+    out.push('"');
+    for c in value.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            c if u32::from(c) < 0x20 => {
+                let _ = write!(out, "\\u{:04x}", u32::from(c));
+            }
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
 }

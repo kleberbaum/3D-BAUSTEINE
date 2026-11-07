@@ -3,7 +3,11 @@
 // 3D-Bausteine bridge.js: the page side of the Web Worker. It starts the
 // worker, hands it the canvas, sends GraphQL requests and state, and keeps
 // the cameras of the last frame, from which the page projects the points
-// of its overlays without asking the worker.
+// of its overlays without asking the worker. It checks that the worker
+// speaks its version of the protocol, writes the revision of each frame to
+// the attribute data-revision of the root element, and tells the page
+// through its failure callback when the worker is gone.
+// Documentation/worker.md is the reference of the protocol.
 
 /** The views in the order of the renderer, View::ALL of bausteine-core. */
 export const VIEWS = [
@@ -14,31 +18,78 @@ export const VIEWS = [
 ];
 export const OBLIQUE = 3;
 
+/** The version of the protocol, which worker.js holds as well and answers in `ready`. */
+export const PROTOCOL = 1;
+
+/** Returns an error of the German `message` with the text `detail` for the console. */
+function failure(message, detail, fatal = false) {
+  const error = new Error(message);
+  if (detail !== undefined) error.detail = detail;
+  if (fatal) error.fatal = true;
+  return error;
+}
+
 /** The page side of the Web Worker. */
 export class Bridge {
+  /** The version of the protocol of this page. */
+  static PROTOCOL = PROTOCOL;
+
   constructor() {
     this.worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
     this.next = 1;
     this.pending = new Map();
+    // The cameras and the revision of the last frame.
     this.cameras = null;
+    this.revision = -1;
+    // What the worker answered in `ready`.
+    this.protocol = null;
+    this.schema = '';
+    this.adapter = null;
+    // The error after which the worker answers nothing more, and whether the page closed it.
+    this.broken = null;
+    this.closed = false;
+    // Called with a German message and a detail when the worker is gone for good.
+    this.failure = null;
     this.frameListeners = [];
     this.worker.onmessage = (event) => this.receive(event.data);
     this.worker.onerror = (event) => {
-      const message = event.message || 'Der Web Worker ist ausgefallen';
-      for (const { reject } of this.pending.values()) reject(new Error(message));
-      this.pending.clear();
-      this.failure?.(message);
+      event.preventDefault?.();
+      this.breakDown(failure('Der Web Worker ist ausgefallen', event.message || 'error event of the worker', true));
     };
+    this.worker.onmessageerror = () => console.error('Eine Nachricht des Web Workers lässt sich nicht lesen');
+    // The revision of each frame goes to the root element, where a test waits for it.
+    this.onFrame((cameras, revision) => {
+      if (typeof document !== 'undefined') document.documentElement.dataset.revision = String(revision);
+    });
   }
 
-  /** Hands the canvas to the worker and waits until its engine and WebGPU are up. */
-  init(canvas, { width, height, scale, offscreen }) {
+  /**
+   * Hands the canvas to the worker and waits until its engine and WebGPU are
+   * up. Answers the message `ready`, and rejects with a German message where
+   * the worker fails or speaks another version of the protocol.
+   */
+  async init(canvas, { width, height, scale, offscreen }) {
     const offscreenCanvas = canvas.transferControlToOffscreen();
-    return this.call('init', { canvas: offscreenCanvas, width, height, scale, offscreen }, [offscreenCanvas]);
+    const ready = await this.call('init', { canvas: offscreenCanvas, width, height, scale, offscreen }, [offscreenCanvas]);
+    this.protocol = ready.protocol ?? null;
+    this.schema = ready.schema ?? '';
+    this.adapter = ready.adapter ?? null;
+    if (this.protocol !== PROTOCOL) {
+      const error = failure(
+        'Seite und Web Worker gehören zu verschiedenen Versionen. Neu laden holt beide frisch.',
+        `the page speaks protocol ${PROTOCOL}, the worker ${this.protocol ?? 'none'}`,
+        true,
+      );
+      this.breakDown(error);
+      throw error;
+    }
+    return ready;
   }
 
   /** Sends one message with an id and answers the reply with the same id. */
   call(type, payload = {}, transfer = []) {
+    if (this.broken) return Promise.reject(this.broken);
+    if (this.closed) return Promise.reject(failure('Der Web Worker ist beendet', `${type} after close`));
     const id = this.next++;
     return new Promise((resolve, reject) => {
       this.pending.set(id, { resolve, reject });
@@ -49,17 +100,32 @@ export class Bridge {
   receive(m) {
     if (m.type === 'frame') {
       this.cameras = m.cameras;
-      for (const listener of this.frameListeners) listener(m.cameras);
+      if (Number.isInteger(m.revision)) this.revision = m.revision;
+      for (const listener of this.frameListeners) listener(m.cameras, this.revision);
+      if (m.id === undefined) return;
+    }
+    if (m.type === 'error' && m.fatal) {
+      this.breakDown(failure(m.message, m.detail, true));
       return;
     }
     const waiting = this.pending.get(m.id);
     if (!waiting) {
-      if (m.type === 'error') console.error(m.message);
+      if (m.type === 'error') console.error(m.message, m.detail ?? '');
       return;
     }
     this.pending.delete(m.id);
-    if (m.type === 'error') waiting.reject(new Error(m.message));
+    if (m.type === 'error') waiting.reject(failure(m.message, m.detail));
     else waiting.resolve(m);
+  }
+
+  /** Ends every call that waits with `error` and tells the page once that the worker is gone. */
+  breakDown(error) {
+    if (this.broken) return;
+    this.broken = error;
+    for (const { reject } of this.pending.values()) reject(error);
+    this.pending.clear();
+    console.error(error.message, error.detail ?? '');
+    this.failure?.(error.message, error.detail);
   }
 
   /** Sends one GraphQL request and answers its response body as an object. */
@@ -68,9 +134,16 @@ export class Bridge {
     return JSON.parse(reply.body);
   }
 
-  /** Sends state to the renderer, which draws a frame after it. */
+  /**
+   * Sends state to the renderer, which draws a frame after it. A preview
+   * that owns its whole buffer is transferred rather than copied.
+   */
   state(fields) {
-    this.worker.postMessage({ type: 'state', ...fields });
+    if (this.broken || this.closed) return;
+    const preview = fields.preview;
+    const transfer = preview instanceof Float32Array && preview.byteOffset === 0
+      && preview.byteLength === preview.buffer.byteLength ? [preview.buffer] : [];
+    this.worker.postMessage({ type: 'state', ...fields }, transfer);
   }
 
   /** Answers the id of the item under the CSS pixel (x, y) of the view `view`, or an empty id. */
@@ -83,12 +156,36 @@ export class Bridge {
     return (await this.call('bounds')).bounds;
   }
 
-  /** Answers the pixels of all four views with the size of the canvas. */
+  /** Answers the pixels of all four views as RGBA with the size of the canvas. */
   async snapshot() {
     return this.call('snapshot');
   }
 
-  /** Calls `listener` with the cameras after every frame. */
+  /**
+   * Lets the worker draw a frame now, after every state sent before, and
+   * answers it as `{cameras, revision}`. The frame listeners hear it as well.
+   */
+  async render() {
+    const frame = await this.call('render');
+    return { cameras: frame.cameras, revision: frame.revision };
+  }
+
+  /** Answers the state of the worker, the object of Documentation/worker.md. */
+  async dump() {
+    return (await this.call('dump')).state;
+  }
+
+  /**
+   * Lets the worker free its device and end, after the messages sent before.
+   * Every call after it rejects.
+   */
+  close() {
+    if (this.closed || this.broken) return;
+    this.closed = true;
+    this.worker.postMessage({ type: 'close' });
+  }
+
+  /** Calls `listener` with the cameras and the revision after every frame. */
   onFrame(listener) {
     this.frameListeners.push(listener);
   }
