@@ -1,0 +1,158 @@
+<!-- SPDX-License-Identifier: GPL-2.0-only -->
+<!--
+  3D-Bausteine architecture.svg: the picture of Documentation/architecture.md. It shows where the
+  GraphQL API sits: the page on the main thread is the client, the Web Worker is the server, and
+  postMessage is the wire. The worker owns WebGPU and draws into the canvas the page transfers to
+  it once. Below the tab stand the binary of the build host, which boots the same engine for the
+  test notebooks, and the server of a later version.
+
+  The picture carries its own background and picks its colours from prefers-color-scheme, so it
+  reads the same on the light and on the dark theme of GitHub.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" role="img" aria-labelledby="title desc">
+  <title id="title">3D-Bausteine 2.0: where the GraphQL API sits</title>
+  <desc id="desc">The page on the main thread of a browser tab is the GraphQL client and sends request bodies to a Web Worker through postMessage. The worker is the GraphQL server: its engine boots the service through aosabi::embed, and its renderer draws the four views with WebGPU into the OffscreenCanvas the page transferred once. The binary bausteine-graphql boots the same engine on the build host for the notebooks.</desc>
+  <style>
+    .page { fill: #ffffff; stroke: #d1d9e0; }
+    .tab { fill: #f6f8fa; stroke: #d1d9e0; }
+    .main { fill: #ddf4ff; stroke: #0969da; }
+    .worker { fill: #dafbe1; stroke: #1a7f37; }
+    .part { fill: #ffffff; stroke: #1a7f37; }
+    .core { fill: #fff8c5; stroke: #9a6700; }
+    .host { fill: #f6f8fa; stroke: #59636e; }
+    .later { fill: #fbefff; stroke: #8250df; stroke-dasharray: 6 4; }
+    .canvas { fill: #ffffff; stroke: #0969da; }
+    .wire { stroke: #1f2328; stroke-width: 1.5; fill: none; }
+    .once { stroke: #0969da; stroke-width: 3; fill: none; }
+    .head { fill: #1f2328; }
+    .head-once { fill: #0969da; }
+    text { font-family: -apple-system, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; font-size: 12px; fill: #1f2328; }
+    .title { font-size: 17px; font-weight: 600; }
+    .name { font-size: 14px; font-weight: 600; }
+    .code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 11px; }
+    .muted { fill: #59636e; }
+    .accent { fill: #0969da; }
+    @media (prefers-color-scheme: dark) {
+      .page { fill: #0d1117; stroke: #3d444d; }
+      .tab { fill: #151b23; stroke: #3d444d; }
+      .main { fill: #0c2d6b; stroke: #4493f8; }
+      .worker { fill: #04260f; stroke: #3fb950; }
+      .part { fill: #0d1117; stroke: #3fb950; }
+      .core { fill: #2e2508; stroke: #d29922; }
+      .host { fill: #151b23; stroke: #9198a1; }
+      .later { fill: #271052; stroke: #ab7df8; }
+      .canvas { fill: #0d1117; stroke: #4493f8; }
+      .wire { stroke: #f0f6fc; }
+      .once { stroke: #4493f8; }
+      .head { fill: #f0f6fc; }
+      .head-once { fill: #4493f8; }
+      text { fill: #f0f6fc; }
+      .muted { fill: #9198a1; }
+      .accent { fill: #4493f8; }
+    }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path class="head" d="M0 0 10 5 0 10z"/>
+    </marker>
+    <marker id="arrow-once" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path class="head-once" d="M0 0 10 5 0 10z"/>
+    </marker>
+  </defs>
+
+  <rect class="page" x="0.5" y="0.5" width="959" height="639" rx="12"/>
+  <text class="title" x="24" y="32">3D-Bausteine 2.0: where the GraphQL API sits</text>
+
+  <!-- The tab of the browser with its two threads. -->
+  <rect class="tab" x="20" y="48" width="920" height="420" rx="10"/>
+  <text class="muted" x="36" y="68">Browser tab: one origin, any static host, no server</text>
+
+  <!-- The main thread, the GraphQL client. -->
+  <rect class="main" x="36" y="80" width="344" height="372" rx="8"/>
+  <text class="name" x="52" y="104">Main thread: the page, the GraphQL client</text>
+  <text class="code muted" x="52" y="124">web/index.html, style.css, classic.css</text>
+  <text x="52" y="142">Form1 with the four views, F2 to F6 and F9</text>
+  <text class="code" x="52" y="170">state.js</text>
+  <text x="136" y="170">the state and its 19 events</text>
+  <text class="code" x="52" y="190">scene.js</text>
+  <text x="136" y="190">commit, undo, redo, selection</text>
+  <text class="code" x="52" y="210">store.js</text>
+  <text x="136" y="210">the GraphQL client, the shelf</text>
+  <text class="code" x="52" y="230">bridge.js</text>
+  <text x="136" y="230">the transport, the cameras</text>
+  <text class="code" x="52" y="250">views.js</text>
+  <text x="136" y="250">the mouse, the overlays, F5</text>
+  <text class="code" x="52" y="270">koerper.js</text>
+  <text x="136" y="270">the handshake of mark_point</text>
+  <text class="code" x="52" y="290">look.js</text>
+  <text x="136" y="290">the two looks, the windows</text>
+  <text class="code" x="52" y="310">main.js</text>
+  <text x="136" y="310">the start, the commands, the keys</text>
+  <text class="muted" x="52" y="334">and register, bilder, farben, menus, dialogs</text>
+  <rect class="canvas" x="52" y="356" width="312" height="44" rx="6"/>
+  <text class="code" x="68" y="376">&lt;canvas id="canvas"&gt;</text>
+  <text class="muted" x="68" y="392">the overlays project with the last cameras</text>
+
+  <!-- The wire between the threads. -->
+  <text class="name" x="480" y="104" text-anchor="middle">postMessage</text>
+  <text class="muted" x="480" y="122" text-anchor="middle">structured clone, transfers</text>
+  <line class="wire" x1="384" y1="160" x2="576" y2="160" marker-end="url(#arrow)"/>
+  <text class="code" x="480" y="152" text-anchor="middle">graphql {id, body}</text>
+  <text class="muted" x="480" y="176" text-anchor="middle">the request as JSON text</text>
+  <line class="wire" x1="384" y1="206" x2="576" y2="206" marker-start="url(#arrow)"/>
+  <text class="code" x="480" y="198" text-anchor="middle">graphql {id, body}</text>
+  <text class="muted" x="480" y="222" text-anchor="middle">the response as JSON text</text>
+  <line class="wire" x1="384" y1="262" x2="576" y2="262" marker-end="url(#arrow)"/>
+  <text class="code" x="480" y="254" text-anchor="middle">state {viewports, ortho, ...}</text>
+  <line class="wire" x1="384" y1="298" x2="576" y2="298" marker-start="url(#arrow)"/>
+  <text class="code" x="480" y="290" text-anchor="middle">frame {cameras, revision}</text>
+  <line class="wire" x1="384" y1="334" x2="576" y2="334" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text class="code" x="480" y="326" text-anchor="middle">init pick bounds snapshot</text>
+  <text class="code" x="480" y="350" text-anchor="middle">render dump close</text>
+
+  <!-- The Web Worker, the GraphQL server. -->
+  <rect class="worker" x="580" y="80" width="344" height="372" rx="8"/>
+  <text class="name" x="596" y="104">Web Worker: the GraphQL server</text>
+  <text class="code muted" x="596" y="124">web/js/worker.js, web/pkg/bausteine_web.wasm</text>
+  <rect class="part" x="596" y="136" width="312" height="78" rx="6"/>
+  <text class="name" x="610" y="156">Engine</text>
+  <text x="610" y="174">aosabi::embed boots the service of service/,</text>
+  <text x="610" y="190">Query and Mutation over the scenes in memory</text>
+  <text class="code muted" x="610" y="206">engine.rs</text>
+  <line class="wire" x1="752" y1="214" x2="752" y2="246" marker-end="url(#arrow)"/>
+  <text class="muted" x="744" y="234" text-anchor="end">the shown scene</text>
+  <text class="muted" x="760" y="234">after each answer</text>
+  <rect class="part" x="596" y="248" width="312" height="78" rx="6"/>
+  <text class="name" x="610" y="268">Renderer: WebGPU through wgpu</text>
+  <text x="610" y="286">the four views, the wires and the camera</text>
+  <text x="610" y="302">of version 1.3, the ray tracer, pick, bounds</text>
+  <text class="code muted" x="610" y="318">renderer.rs, gpu.rs, shaders/</text>
+  <line class="wire" x1="752" y1="326" x2="752" y2="354" marker-end="url(#arrow)"/>
+  <rect class="canvas" x="596" y="356" width="312" height="44" rx="6"/>
+  <text class="code" x="610" y="376">OffscreenCanvas</text>
+  <text class="muted" x="610" y="392">one frame per change, then the message frame</text>
+  <rect class="core" x="596" y="408" width="312" height="36" rx="6"/>
+  <text class="code" x="610" y="424">crates/bausteine-core</text>
+  <text class="muted" x="610" y="438">the geometry the engine and the renderer share</text>
+
+  <!-- The canvas crosses once, drawn over the borders of both threads. -->
+  <line class="once" x1="364" y1="378" x2="595" y2="378" marker-end="url(#arrow-once)"/>
+  <text class="accent" x="480" y="370" text-anchor="middle">transferred once at the start</text>
+
+  <!-- The build host and the later server. -->
+  <rect class="host" x="20" y="488" width="452" height="128" rx="10"/>
+  <text class="name" x="36" y="512">Build host: the test notebooks</text>
+  <text x="36" y="534"><tspan class="code">bausteine-graphql</tspan> boots the same Engine and answers</text>
+  <text x="36" y="552">one request body per line of its standard input.</text>
+  <text x="36" y="570"><tspan class="code">tests/harness.py</tspan> drives it, so the notebooks judge</text>
+  <text x="36" y="588">the engine the page talks to, and drive the page</text>
+  <text x="36" y="606">itself in a headless Chromium with WebGPU.</text>
+
+  <rect class="later" x="488" y="488" width="452" height="128" rx="10"/>
+  <text class="name" x="504" y="512">A later version, not this one</text>
+  <text x="504" y="534">The service built with the card server of</text>
+  <text x="504" y="552"><tspan class="code">cargo aosabi build</tspan> answers the same bodies at</text>
+  <text x="504" y="570"><tspan class="code">POST /graphql</tspan>. Then <tspan class="code">bridge.js</tspan> gains a fetch</text>
+  <text x="504" y="588">transport, and <tspan class="code">store.js</tspan> and the modules stay</text>
+  <text x="504" y="606">as they are.</text>
+</svg>

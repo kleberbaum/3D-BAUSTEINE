@@ -6,23 +6,44 @@
    (*.frm, *.frx), the modules (*.bas), the project files (*.vbp, *.VBW),
    the C source Grafik3d.cpp, the binaries (3D_BAU.EXE, SCREEN.EXE,
    graf3d32.dll), the scene files (*.pov, *.pov.bak), the images (*.bmp)
-   and START.BAT, carry no license. Every right in them stays with their
-   author, Herbert Kleber. Nothing in this repository grants a license to
-   them, and the license of version 2.0 below does not reach them.
+   and START.BAT, and the project diary in README.md below its first
+   rule, carry no license. Every right in them stays with their author,
+   Herbert Kleber. Nothing in this repository grants a license to them,
+   and the license of version 2.0 below does not reach them.
 
 2. Version 2.0 of 2026 by Florian Kleber
 
    The rewrite in Rust, every file under crates/, service/, web/, tools/,
-   tests/, Documentation/, LICENSES/ and .github/, and the files
-   Cargo.toml, Cargo.lock, rust-toolchain.toml, rustfmt.toml, .gitignore,
-   .gitmodules and this file, is
+   tests/, Documentation/ and .github/, the files Cargo.toml, Cargo.lock,
+   rust-toolchain.toml, rustfmt.toml, .gitignore, .gitmodules and this
+   file, and the part of README.md above its first rule, is
 
        Copyright (C) 2026 Florian Kleber
 
    and licensed under the GNU General Public License version 2 only,
    SPDX-License-Identifier: GPL-2.0-only. The full text stands in
-   LICENSES/GPL-2.0-only.txt. Every source file of version 2.0 opens with
-   its SPDX line.
+   LICENSES/GPL-2.0-only.txt, which the Free Software Foundation publishes
+   under the terms it states itself.
+
+   Every file of version 2.0 whose type has a comment syntax opens with
+   its SPDX line, in the comment form of its language: the Rust, WGSL,
+   JavaScript, CSS, HTML, SVG, shell, Python, YAML and TOML files, the
+   file tests/requirements.txt, and the first cell of every notebook under
+   tests/notebooks. The files of version 2.0 whose type has no comment
+   syntax, or whose syntax a tool writes, carry no SPDX line and fall
+   under this section all the same:
+
+   - the Markdown pages under Documentation/ and the part of README.md
+     named above,
+   - the JSON files, such as tests/fixtures/parity.json,
+   - the lock files Cargo.lock, service/Cargo.lock and
+     crates/bausteine-web/Cargo.lock, which cargo writes,
+   - the pictures under Documentation/images/ in PNG, which are renders
+     of version 2.0 written by the test notebooks,
+   - the files .gitignore and .gitmodules, and this file.
+
+   tools/license_lint.py checks the SPDX line of every file of version
+   2.0, and tools/lint.sh and the continuous integration run it.
 
    Version 2.0 implements the design described in the diploma thesis
    "Grundlagen der 3D-Computergrafik" by Herbert Kleber. It contains no

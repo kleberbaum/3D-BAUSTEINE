@@ -5,14 +5,17 @@ Kleber (2002): Schülerinnen und Schüler bauen Szenen aus geometrischen Grundk�
 den zugeordneten Normalrissen des GZ-Unterrichts und lassen sie fotorealistisch berechnen. Version
 2.0 schreibt das Programm neu, in Rust. Es läuft ganz im Browser: Ein Web Worker führt ein Modul aus
 WebAssembly aus, das die Szenen in einem Dienst auf [Aosabi](https://github.com/netsnek/aosabi) mit
-einer GraphQL-API hält und die Risse mit WebGPU zeichnet, das Raytracing eingeschlossen. Einen Server
-braucht die Seite nicht.
+einer GraphQL-API hält und die Risse mit WebGPU zeichnet, das Raytracing eingeschlossen. Einen
+Server braucht die Seite nicht.
 
 ![Haus mit Tür und Fenster in Aufriss, Kreuzriss, Grundriss und Schrägriss](Documentation/images/zugeordnete-normalrisse.png)
 
 ![Das Haus im Raytracing des Schrägrisses](Documentation/images/raytracing.png)
 
 ![Dieselbe Szene in der klassischen Darstellung von Version 1.3](Documentation/images/klassisch.png)
+
+Die drei Bilder sind Aufnahmen von Version 2.0, die die Test-Notebooks im Browser schreiben. Keines
+ist eine Abbildung der Diplomarbeit oder ein Bildschirmfoto von Version 1.3.
 
 ## Was Version 2.0 kann
 
@@ -30,8 +33,8 @@ braucht die Seite nicht.
   einem zweiten die dritte Koordinate, dann ebenso die Größe. Dazu Verschieben durch Ziehen,
   Rückgängig und Wiederholen, Mausrad und Verschieben der Ansicht.
 - Raytracing im Schrägriss direkt im Browser, mit Schatten, Spiegelung, Glas und den 43
-  Standardtexturen von POV-Ray. Die Ausgabe als Datei für POV-Ray bleibt, ebenso die Kamera mit ihrer
-  Drehung und die Dia-Show mit den gespeicherten Bildern.
+  Standardtexturen von POV-Ray. Die Ausgabe als Datei für POV-Ray bleibt, ebenso die Kamera mit
+  ihrer Drehung und die Dia-Show mit den gespeicherten Bildern.
 - Szenen bleiben im Browser gespeichert, lassen sich als Datei speichern und öffnen und als Link
   weitergeben.
 
@@ -45,12 +48,20 @@ sh tools/build.sh
 python3 tests/serve.py web
 ```
 
-Dann `http://localhost:8000` in einem Browser mit WebGPU öffnen: Chrome oder Edge ab Version 113,
-Safari ab 26 oder Firefox ab 141. Jeder andere statische Webserver tut es ebenso. Der Aufbau des
-Programms steht in [Documentation/architecture.md](Documentation/architecture.md), die API in
-[Documentation/graphql.md](Documentation/graphql.md), die Eigenheiten von Version 1.3 und wie
-Version 2.0 mit ihnen umgeht in [Documentation/quirks.md](Documentation/quirks.md). Die Tests sind
-Jupyter-Notebooks unter `tests/notebooks`, `python3 tests/run.py` führt sie mit papermill aus.
+Dann `http://localhost:8000` öffnen. Beide Darstellungen, die moderne und die klassische, brauchen
+denselben Browser: WebGPU in einem Web Worker, der in eine `OffscreenCanvas` zeichnet, also Chrome
+oder Edge ab Version 113, Safari ab 26 oder Firefox ab 141 dort, wo Firefox WebGPU eingeschaltet
+hat, und die Seite in einem sicheren Kontext, über `https` oder von `localhost`. Jeder andere
+statische Webserver tut es ebenso wie `tests/serve.py`.
+
+Der Aufbau des Programms steht in [Documentation/architecture.md](Documentation/architecture.md),
+die Nachrichten zwischen Seite und Web Worker in [Documentation/worker.md](Documentation/worker.md),
+die API in [Documentation/graphql.md](Documentation/graphql.md), die Eigenheiten von Version 1.3
+und wie Version 2.0 mit ihnen umgeht in [Documentation/quirks.md](Documentation/quirks.md). Die
+Tests sind Jupyter-Notebooks unter `tests/notebooks`, `python3 tests/run.py` führt sie mit
+papermill aus, `python3 tests/run.py --fast` nur die ohne Browser. Vor einem Commit prüft
+`sh tools/lint.sh` die Formatierung, die Lints von Clippy, die Lizenzregel und dass kein Notebook
+seine Ausgaben mitbringt.
 
 | Ordner | Inhalt |
 | --- | --- |
@@ -60,14 +71,18 @@ Jupyter-Notebooks unter `tests/notebooks`, `python3 tests/run.py` führt sie mit
 | `service` | Der Dienst auf Aosabi mit der GraphQL-API |
 | `web` | Die Oberfläche im Browser und das Skript des Web Workers |
 | `tests` | Die Notebooks |
+| `tools` | Der Build, die Lints und die Prüfung der Lizenzregel |
+| `Documentation` | Der Aufbau, das Protokoll des Web Workers, die API, die Lizenzen und die Eigenheiten |
 | `third_party/aosabi` | Aosabi als Submodul |
 | Die übrigen Dateien | Version 1.3 von 2002 in Visual Basic 5 und C, unverändert |
 
 ## Lizenz
 
-Herbert Kleber hat für die Dateien von Version 1.3 noch keine Lizenz gewählt, sie tragen keine. Die
-Dateien von Version 2.0 von Florian Kleber stehen unter der GNU General Public License Version 2
-(GPL-2.0-only). [COPYING](COPYING) sagt, welche Datei zu welchem Teil gehört.
+Herbert Kleber hat für die Dateien von Version 1.3 noch keine Lizenz gewählt, sie tragen keine,
+ebenso wenig sein Projekttagebuch unter dem Strich. Die Dateien von Version 2.0 von Florian Kleber
+stehen unter der GNU General Public License Version 2 (GPL-2.0-only). [COPYING](COPYING) sagt,
+welche Datei zu welchem Teil gehört, und [Documentation/licensing.md](Documentation/licensing.md),
+warum die Teile, die Version 2.0 einbindet, zu ihrer Lizenz passen.
 
 ---
 

@@ -15,9 +15,15 @@ version 1.3 that each part takes the place of, so a reader can compare the two.
 ## 2. Version 2.0
 
 Every file of version 2.0 is GPL-2.0-only, Copyright (C) 2026 Florian Kleber, and opens with the
-line `SPDX-License-Identifier: GPL-2.0-only`. The text of the license is
-[LICENSES/GPL-2.0-only.txt](../LICENSES/GPL-2.0-only.txt). The license is version 2 only, without
-the clause "or any later version".
+line `SPDX-License-Identifier: GPL-2.0-only` when its type has a comment syntax. COPYING lists the
+files that have none, such as the Markdown pages, the lock files and the pictures. The text of the
+license is [LICENSES/GPL-2.0-only.txt](../LICENSES/GPL-2.0-only.txt). The license is version 2
+only, without the clause "or any later version".
+
+[tools/license_lint.py](../tools/license_lint.py) checks the rule on every run of `tools/lint.sh`
+and of the continuous integration: every file of version 2.0 with a comment syntax opens with its
+SPDX line, and the name of the permissive license that an earlier draft attached to version 1.3
+stands in no file, no commit message and no patch of the fork above the upstream history.
 
 ## 3. What a build links
 
