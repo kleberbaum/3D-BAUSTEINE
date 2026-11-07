@@ -2,12 +2,18 @@
 #
 # The continuous integration of 3D-Bausteine, run on every push and on every pull request.
 #
-# The job checks the formatting and the lints of the geometry, the devtool, the service and
-# the module of the Web Worker, builds everything with tools/build.sh, and runs the test
-# notebooks with papermill, the ones that drive a headless Chromium with WebGPU included.
+# Three jobs run. The job lint runs tools/lint.sh, which checks the formatting and the lints of
+# the three cargo workspaces, the license rule over the tree and over the whole history of the
+# fork, and that every notebook is committed without its outputs. The job build-and-fast builds
+# everything with tools/build.sh and runs the notebooks that need no browser. The job browser
+# builds again from the cache of the job before and runs the notebooks that drive a headless
+# Chromium with WebGPU, together with the sections of the fast notebooks that need the page,
+# with the executed notebooks of the job before beside them, since the notebook 90_quirks reads
+# the checks of every other notebook.
 #
 # Every action is pinned to the commit of a release, with its tag beside it, as Aosabi pins
-# them. No job reads a secret, and the token of the job can only read the repository.
+# them, and a pin moves by hand. No job reads a secret, and the token of every job can only
+# read the repository.
 
 name: CI
 
@@ -31,8 +37,52 @@ defaults:
     shell: bash
 
 jobs:
-  build:
-    name: Build and check
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # The license lint reads every commit above the last commit of the upstream history, so
+      # the checkout fetches the whole history and not the last commit alone.
+      - name: Check out the tree with its history and Aosabi
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: true
+          fetch-depth: 0
+
+      # The file rust-toolchain.toml pins the compiler with its components and the target
+      # wasm32-unknown-unknown, and rustup installs what it names.
+      - name: Install the pinned toolchain
+        run: |
+          rustup toolchain install --no-self-update
+          rustc -vV
+
+      - name: Restore the cargo cache of the lints
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            target/
+            service/target/
+            crates/bausteine-web/target/
+            third_party/aosabi/target/
+          key: cargo-lint-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock', 'service/Cargo.lock', 'crates/bausteine-web/Cargo.lock') }}
+          restore-keys: cargo-lint-${{ runner.os }}-
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      # The script writes the generated copy of the service with tools/build.sh --check first,
+      # since clippy reads the module of the Web Worker with it.
+      - name: Lint the formatting, the code, the licenses and the notebooks
+        run: sh tools/lint.sh
+
+  build-and-fast:
+    name: Build and the fast notebooks
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -42,14 +92,14 @@ jobs:
           persist-credentials: false
           submodules: true
 
-      # The file rust-toolchain.toml pins the compiler with its components and the target
-      # wasm32-unknown-unknown, and rustup installs what it names.
       - name: Install the pinned toolchain
         run: |
           rustup toolchain install --no-self-update
           rustc -vV
 
-      - name: Restore the cargo cache
+      # The key follows the locks and the toolchain, so a run saves the cache once per lock and
+      # every later run, the job browser among them, starts from the build before.
+      - name: Restore the cargo cache of the build
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -60,16 +110,11 @@ jobs:
             service/target/
             crates/bausteine-web/target/
             third_party/aosabi/target/
-          key: cargo-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock', 'service/Cargo.lock', 'crates/bausteine-web/Cargo.lock') }}
-          restore-keys: cargo-${{ runner.os }}-
+          key: cargo-build-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock', 'service/Cargo.lock', 'crates/bausteine-web/Cargo.lock') }}
+          restore-keys: cargo-build-${{ runner.os }}-
 
-      - name: Check the formatting
-        run: |
-          cargo fmt --check
-          cargo fmt --check --manifest-path service/Cargo.toml
-          cargo fmt --check --manifest-path crates/bausteine-web/Cargo.toml
-
-      # wasm-bindgen-cli has to be the version of wasm-bindgen that the lock file of the module pins.
+      # wasm-bindgen-cli has to be the version of wasm-bindgen that the lock file of the module
+      # pins.
       - name: Install wasm-bindgen
         run: |
           version=$(sed -n '/^name = "wasm-bindgen"$/{n;s/version = "\(.*\)"/\1/p;}' crates/bausteine-web/Cargo.lock)
@@ -79,24 +124,101 @@ jobs:
       - name: Build the service, the module of the Web Worker and the engine of the notebooks
         run: sh tools/build.sh --dev
 
-      - name: Lint the geometry, the devtool and the module of the Web Worker
-        run: |
-          cargo clippy --locked --workspace --all-targets -- -D warnings
-          cargo clippy --locked --manifest-path crates/bausteine-web/Cargo.toml --lib \
-            --target wasm32-unknown-unknown -- -D warnings
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
 
-      - name: Install the Python packages and Chromium of the notebooks
-        run: |
-          python3 -m pip install --user -r tests/requirements.txt
-          python3 -m playwright install --with-deps chromium
+      - name: Install the Python packages of the notebooks
+        run: python -m pip install --disable-pip-version-check --no-input -r tests/requirements.txt
 
-      - name: Run the test notebooks
-        run: python3 tests/run.py
+      - name: Run the notebooks that need no browser
+        run: python tests/run.py --fast
 
+      # The job browser takes these copies, and a failed run keeps them for a reader.
       - name: Keep the executed notebooks
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: notebooks
+          name: notebooks-fast
           path: tests/notebooks/out/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  browser:
+    name: The notebooks in the browser
+    needs: build-and-fast
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out the tree with Aosabi
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: true
+
+      - name: Install the pinned toolchain
+        run: |
+          rustup toolchain install --no-self-update
+          rustc -vV
+
+      # The job takes the cache the job build-and-fast saved and writes none of its own.
+      - name: Restore the cargo cache of the build
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/bin/wasm-bindgen
+            target/
+            service/target/
+            crates/bausteine-web/target/
+            third_party/aosabi/target/
+          key: cargo-build-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock', 'service/Cargo.lock', 'crates/bausteine-web/Cargo.lock') }}
+          restore-keys: cargo-build-${{ runner.os }}-
+
+      - name: Install wasm-bindgen
+        run: |
+          version=$(sed -n '/^name = "wasm-bindgen"$/{n;s/version = "\(.*\)"/\1/p;}' crates/bausteine-web/Cargo.lock)
+          wasm-bindgen --version 2>/dev/null | grep -q "$version" ||
+            cargo install wasm-bindgen-cli --version "$version" --locked
+
+      - name: Build the service, the module of the Web Worker and the engine of the notebooks
+        run: sh tools/build.sh --dev
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
+
+      # The harness launches the Chromium of Playwright when BAUSTEINE_CHROMIUM names none, with
+      # WebGPU on SwiftShader, so the runner needs no graphics card.
+      - name: Install the Python packages and Chromium of the notebooks
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r tests/requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Take the executed notebooks of the fast job
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: notebooks-fast
+          path: tests/notebooks/out/
+
+      # The notebooks 00_environment and 20_views run again here, since each holds a section that
+      # needs the page in Chromium and that the fast job leaves out. The other copies of the fast
+      # job stay, and 90_quirks reads them all.
+      - name: Run the notebooks that drive the page
+        run: python tests/run.py 00 20 60 70 80 90
+
+      - name: Keep the executed notebooks and the screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: notebooks-browser
+          path: tests/notebooks/out/
+          retention-days: 7
           if-no-files-found: ignore

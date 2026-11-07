@@ -1,0 +1,105 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Publishes the page of 3D-Bausteine on GitHub Pages. The workflow is prepared and switched off.
+#
+# The page is the folder web/ with the module of the Web Worker that tools/build.sh writes into
+# web/pkg, and any static host serves it, GitHub Pages among them. The workflow runs after every
+# run of the workflow CI on main that passes, and by hand, and builds the release, uploads web/
+# as the artifact of the pages and deploys it. It publishes nothing until the repository
+# variable BAUSTEINE_PAGES reads on and the source of the pages in the settings of the
+# repository is GitHub Actions. The page stays unpublished until Herbert Kleber has seen it,
+# which is open question 5 of the plan.
+#
+# Every action is pinned to the commit of a release, with its tag beside it. The job build can
+# only read the repository. The job deploy alone writes the pages and asks for the token of
+# OpenID Connect that GitHub Pages needs, and no job reads a secret.
+
+name: Pages
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build the page
+    if: >-
+      vars.BAUSTEINE_PAGES == 'on' &&
+      (github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      # After a run of CI the checkout takes the commit that run judged, not the newest one.
+      - name: Check out the tree with Aosabi
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: true
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Install the pinned toolchain
+        run: |
+          rustup toolchain install --no-self-update
+          rustc -vV
+
+      - name: Restore the cargo cache of the release
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/bin/wasm-bindgen
+            service/target/
+            crates/bausteine-web/target/
+            third_party/aosabi/target/
+          key: cargo-pages-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml', 'service/Cargo.lock', 'crates/bausteine-web/Cargo.lock') }}
+          restore-keys: cargo-pages-${{ runner.os }}-
+
+      - name: Install wasm-bindgen
+        run: |
+          version=$(sed -n '/^name = "wasm-bindgen"$/{n;s/version = "\(.*\)"/\1/p;}' crates/bausteine-web/Cargo.lock)
+          wasm-bindgen --version 2>/dev/null | grep -q "$version" ||
+            cargo install wasm-bindgen-cli --version "$version" --locked
+
+      - name: Build the release of the module of the Web Worker
+        run: sh tools/build.sh
+
+      - name: Upload the folder web as the artifact of the pages
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: web/
+
+  deploy:
+    name: Deploy the page
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy the artifact to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
