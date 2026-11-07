@@ -24,6 +24,11 @@
  * relative to that Frame, which is the F4 coordinate minus the place of the
  * Frame. The comments name the original numbers where they differ.
  *
+ * The rules of style.css after its tokens are scoped to the modern look,
+ * so they never reach this one. The resets below therefore only meet the
+ * defaults of the browser, and they keep the classic look whole should a
+ * rule of style.css ever lose its scope.
+ *
  * The item numbers C-010 and following refer to the plan of the classic
  * look. The bevels are inset box shadows, so no border changes the layout.
  * The small pictures (arrows, check marks, caption glyphs, the dither) are
@@ -65,7 +70,6 @@ html[data-look="classic"] {
   --c-tooltip: #ffffe1;
   --c-tooltip-text: #000000;
   --c-desktop: #008080;
-  --c-lx: #120000;
   --c-menu-hilite: #800080;
 
   --vga-black: #000000;
@@ -115,6 +119,7 @@ html[data-look="classic"] {
   --c-img-radio: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath fill='%23808080' d='M4 0h4v1H4zM2 1h2v1H2zM8 1h2v1H8zM1 2h1v1H1zM1 3h1v1H1zM0 4h1v1H0zM0 5h1v1H0zM0 6h1v1H0zM0 7h1v1H0zM1 8h1v1H1zM1 9h1v1H1z'/%3E%3Cpath fill='%23fff' d='M4 2h4v1H4zM10 2h1v1H10zM3 3h6v1H3zM10 3h1v1H10zM2 4h8v1H2zM11 4h1v1H11zM2 5h8v1H2zM11 5h1v1H11zM2 6h8v1H2zM11 6h1v1H11zM2 7h8v1H2zM11 7h1v1H11zM3 8h6v1H3zM10 8h1v1H10zM4 9h4v1H4zM10 9h1v1H10zM2 10h2v1H2zM8 10h2v1H8zM4 11h4v1H4z'/%3E%3Cpath fill='%23000' d='M4 1h4v1H4zM2 2h2v1H2zM8 2h1v1H8zM2 3h1v1H2zM1 4h1v1H1zM1 5h1v1H1zM1 6h1v1H1zM1 7h1v1H1zM2 8h1v1H2z'/%3E%3Cpath fill='%23dfdfdf' d='M9 2h1v1H9zM9 3h1v1H9zM10 4h1v1H10zM10 5h1v1H10zM10 6h1v1H10zM10 7h1v1H10zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z'/%3E%3C/svg%3E");
   --c-img-radio-on: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath fill='%23808080' d='M4 0h4v1H4zM2 1h2v1H2zM8 1h2v1H8zM1 2h1v1H1zM1 3h1v1H1zM0 4h1v1H0zM0 5h1v1H0zM0 6h1v1H0zM0 7h1v1H0zM1 8h1v1H1zM1 9h1v1H1z'/%3E%3Cpath fill='%23fff' d='M4 2h4v1H4zM10 2h1v1H10zM3 3h6v1H3zM10 3h1v1H10zM2 4h3v1H2zM7 4h3v1H7zM11 4h1v1H11zM2 5h2v1H2zM8 5h2v1H8zM11 5h1v1H11zM2 6h2v1H2zM8 6h2v1H8zM11 6h1v1H11zM2 7h3v1H2zM7 7h3v1H7zM11 7h1v1H11zM3 8h6v1H3zM10 8h1v1H10zM4 9h4v1H4zM10 9h1v1H10zM2 10h2v1H2zM8 10h2v1H8zM4 11h4v1H4z'/%3E%3Cpath fill='%23000' d='M4 1h4v1H4zM2 2h2v1H2zM8 2h1v1H8zM2 3h1v1H2zM1 4h1v1H1zM5 4h2v1H5zM1 5h1v1H1zM4 5h4v1H4zM1 6h1v1H1zM4 6h4v1H4zM1 7h1v1H1zM5 7h2v1H5zM2 8h1v1H2z'/%3E%3Cpath fill='%23dfdfdf' d='M9 2h1v1H9zM9 3h1v1H9zM10 4h1v1H10zM10 5h1v1H10zM10 6h1v1H10zM10 7h1v1H10zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z'/%3E%3C/svg%3E");
   --c-img-dither: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M0 0h1v1H0zM1 1h1v1H1z'/%3E%3Cpath fill='%23c0c0c0' d='M1 0h1v1H1zM0 1h1v1H0z'/%3E%3C/svg%3E");
+  --c-img-hatch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M7 0h1v1H7zM6 1h1v1H6zM5 2h1v1H5zM4 3h1v1H4zM3 4h1v1H3zM2 5h1v1H2zM1 6h1v1H1zM0 7h1v1H0z'/%3E%3C/svg%3E");
   --c-img-sunken: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='5' shape-rendering='crispEdges'%3E%3Cpath fill='%23808080' d='M0 0h4v1H0zM0 1h1v1H0zM0 2h1v1H0zM0 3h1v1H0z'/%3E%3Cpath fill='%23000' d='M1 1h2v1H1zM1 2h1v1H1z'/%3E%3Cpath fill='%23dfdfdf' d='M3 1h1v1H3zM3 2h1v1H3zM1 3h3v1H1z'/%3E%3Cpath fill='%23fff' d='M4 0h1v1H4zM4 1h1v1H4zM2 2h1v1H2zM4 2h1v1H4zM4 3h1v1H4zM0 4h5v1H0z'/%3E%3C/svg%3E");
   --c-img-critical: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23800000'/%3E%3Ccircle cx='16' cy='16' r='14' fill='%23ff0000'/%3E%3Cpath d='M10 8l6 6 6-6 2 2-6 6 6 6-2 2-6-6-6 6-2-2 6-6-6-6z' fill='%23fff'/%3E%3C/svg%3E");
 
@@ -150,6 +155,22 @@ html[data-look="classic"] [hidden] {
 html[data-look="classic"] *::before,
 html[data-look="classic"] *::after {
   content: none !important;
+}
+
+/* A quotation keeps its German quotation marks, which the reset above
+   would remove. The help page POV-Referenz quotes what the thesis printed
+   in elements q of the class thesis. The element name raises the
+   specificity above that of the reset. */
+html[data-look="classic"] q {
+  quotes: "\201E" "\201C" "\201A" "\2018";
+}
+
+html[data-look="classic"] q::before {
+  content: open-quote !important;
+}
+
+html[data-look="classic"] q::after {
+  content: close-quote !important;
 }
 
 /* Elements of the modern look that the classic look does not show. */
@@ -223,16 +244,9 @@ html[data-look="classic"] ::selection {
   color: #fff;
 }
 
-/* A caption of version 1.3 replaces the modern one: Command1, Command2,
-   Frame6 and the caption 3D of F2. */
-html[data-look="classic"] [data-classic-caption] {
-  font-size: 0 !important;
-}
-
-html[data-look="classic"] [data-classic-caption]::after {
-  content: attr(data-classic-caption) !important;
-  font-size: 11px;
-}
+/* The captions of version 1.3 (Command1, Command2, Frame6 and the caption
+   3D of F2) are the text of their elements in this look, which look.js
+   swaps, so nothing here draws them. */
 
 /*
  * 3. Scroll bars (C-182). Chromium and WebKit draw the Windows 98 bar.
@@ -945,11 +959,16 @@ html[data-look="classic"]:has(dialog.c-win[open]) .c-win.active:not(dialog) > .w
 }
 
 /* Tool windows have the small caption: fourteen pixels with a pixel of
-   face above and below (C-081). */
+   face above and below (C-081), in the regular weight that "Eingaben" and
+   "Farben/Texturen" show in the thesis pictures readme-4 and readme-8. */
 html[data-look="classic"] .c-win[data-border="tool"] > .win-title {
   height: 14px;
   margin: 1px 0;
   padding-left: 2px;
+}
+
+html[data-look="classic"] .c-win[data-border="tool"] > .win-title > .win-caption {
+  font-weight: 400;
 }
 
 html[data-look="classic"] .c-win > .win-title > .win-icon {
@@ -1107,10 +1126,23 @@ html[data-look="classic"] .c-win > .win-client {
   box-shadow: none;
 }
 
-/* Sizing edges, if the script adds them (C-080). */
+/* Sizing edges (C-080). look.js gives every window but F5 eight edges of
+   four pixels over its frame, with the cursors of Windows 98. A drag of the
+   bottom edge of F2 makes room for more bodies, and a wider F2 wraps them
+   into further columns (R-06). */
 html[data-look="classic"] .win-edge {
   position: absolute;
   z-index: 5;
+  display: block;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+/* A minimised Form1 keeps its caption alone, a maximised one no edges. */
+html[data-look="classic"] .c-win.minimized > :not(.win-title),
+html[data-look="classic"] .c-win.maximized > .win-edge {
+  display: none !important;
 }
 
 html[data-look="classic"] .win-edge[data-edge="n"] { left: 4px; right: 4px; top: 0; height: 4px; cursor: ns-resize; }
@@ -1156,11 +1188,15 @@ html[data-look="classic"] #f4 {
   z-index: 102;
 }
 
+/* F6 has the client of 244 by 86 pixels of the EXE inside the frame of a
+   tool window: four pixels of edge, the small caption of fourteen with a
+   pixel above and below, so 252 by 110 outside (R-38). Form_Set puts it
+   under F4 at the top F4H of 580 pixels. */
 html[data-look="classic"] #f6 {
   left: calc(var(--screen-w) - 252px);
   top: 580px;
   width: 252px;
-  height: 200px;
+  height: 110px;
   z-index: 103;
 }
 
@@ -1330,7 +1366,11 @@ html[data-look="classic"] .menubar .menu-separator {
   background: none;
 }
 
-/* A sub menu opens to the right of its entry. */
+/* A sub menu opens to the right of its entry, under the pointer or when
+   the keys open it, which menus.js marks with aria-expanded on the entry.
+   The focus on the entry alone only highlights it, so Down passes over
+   Beispiele and Left visibly closes the sub menu, as on Windows 98. While
+   the focus is inside the sub menu, it stays open. */
 html[data-look="classic"] .menubar .menu-entry.submenu > .submenu-popup {
   display: none;
   left: 100%;
@@ -1338,9 +1378,17 @@ html[data-look="classic"] .menubar .menu-entry.submenu > .submenu-popup {
 }
 
 html[data-look="classic"] .menubar .menu-entry.submenu:hover > .submenu-popup,
-html[data-look="classic"] .menubar .menu-entry.submenu:focus-within > .submenu-popup,
-html[data-look="classic"] .menubar .menu-entry.submenu[aria-expanded="true"] > .submenu-popup {
+html[data-look="classic"] .menubar .menu-entry.submenu[aria-expanded="true"] > .submenu-popup,
+html[data-look="classic"] .menubar .menu-entry.submenu > .submenu-popup:focus-within {
   display: flex;
+}
+
+/* A screen without a pointer that hovers opens the sub menu on a tap of
+   its entry. */
+@media (hover: none) {
+  html[data-look="classic"] .menubar .menu-entry.submenu:focus-within > .submenu-popup {
+    display: flex;
+  }
 }
 
 html[data-look="classic"] .menubar .submenu-popup:empty {
@@ -1479,6 +1527,28 @@ html[data-look="classic"] #fallback p {
   margin: 0;
   color: #000;
   font: 11px/13px var(--c-font);
+}
+
+/* The text of the worker in a sunken box and the button Neu laden under it. */
+html[data-look="classic"] #fallback-detail {
+  max-height: 80px;
+  margin: 8px 0 0;
+  padding: 3px 4px;
+  overflow: auto;
+  background: #fff;
+  color: #000;
+  font: 11px/13px var(--c-font);
+  white-space: pre-wrap;
+  box-shadow: var(--c-bevel-sunken);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+html[data-look="classic"] #fallback-reload {
+  display: block;
+  width: 75px;
+  height: 23px;
+  margin: 12px 0 0 auto;
 }
 
 /*
@@ -1735,6 +1805,18 @@ html[data-look="classic"] #frame1 {
   background: var(--c-geo);
 }
 
+/* The legend of GEOMETRIEDATEN is white on the teal #008080 of the thesis
+   pictures of pages 88, 91 and 92 and black on the #00c0c0 of F4.frm, as
+   page 95 shows it (R-39). The script names the colour of the frame in
+   data-geo on the root element. The labels L1 stay black on both. */
+html[data-look="classic"] #frame1 > legend {
+  color: #fff;
+}
+
+html[data-look="classic"][data-geo="#00c0c0"] #frame1 > legend {
+  color: #000;
+}
+
 /* The controls of GEOMETRIEDATEN: F4 coordinates minus 8/176. */
 html[data-look="classic"] #cb1 { left: 8px; top: 16px; width: 201px; height: 21px; z-index: 4; }
 html[data-look="classic"] #cb1 .c-combo-edit { font-weight: 700; }
@@ -1802,22 +1884,9 @@ html[data-look="classic"] #btn-einf { left: 8px; top: 16px; width: 65px; height:
 html[data-look="classic"] #btn-change { left: 80px; top: 16px; width: 65px; height: 25px; }
 html[data-look="classic"] #btn-clear { left: 152px; top: 16px; width: 57px; height: 25px; }
 
-/* Tab 1 "Oberfläche" is empty in version 1.3. Version 2.0 shows only the
-   hint where colour and texture are set (C-138). */
-html[data-look="classic"] .tab-page[data-page="oberflaeche"] > .surface-hint {
-  left: 12px;
-  top: 56px;
-  width: 221px;
-  height: auto;
-  padding: 0;
-  background: transparent;
-  color: #000;
-  font: 11px/13px var(--c-font);
-  text-align: left;
-  white-space: normal;
-}
-
-html[data-look="classic"] .tab-page[data-page="oberflaeche"] > :not(.surface-hint) {
+/* Tab 1 "Oberfläche" is empty in version 1.3, and so it is here: the
+   swatch and the hint of version 2.0 are modern-only (C-138, P-151a). */
+html[data-look="classic"] .tab-page[data-page="oberflaeche"] > * {
   display: none;
 }
 
@@ -1919,6 +1988,14 @@ html[data-look="classic"] #lhs-3 { top: 120px; }
 
 html[data-look="classic"] #start { left: 24px; top: 376px; width: 65px; height: 25px; }
 html[data-look="classic"] #command2 { left: 144px; top: 376px; width: 65px; height: 25px; }
+
+/* While the turn runs, Start stays down as a CommandButton held by the
+   mouse, with the pressed edge and the caption moved by one pixel (M-186). */
+html[data-look="classic"] #start[aria-pressed="true"] {
+  padding: 2px 1px 0 3px;
+  box-shadow: var(--c-bevel-pressed);
+}
+
 html[data-look="classic"] #frame7-1 { left: 8px; top: 408px; width: 217px; height: 57px; }
 html[data-look="classic"] #btn1-1 { left: 12px; top: 16px; width: 89px; height: 33px; }
 html[data-look="classic"] #btn2-1 { left: 120px; top: 16px; width: 89px; height: 33px; }
@@ -1985,7 +2062,9 @@ html[data-look="classic"] #f5 .f5-label {
   font: 700 13px/16px var(--c-font);
 }
 
-html[data-look="classic"] #f5 #lx { left: 8px; top: 8px; width: 17px; color: var(--c-lx); }
+/* The label x is black as y and z are. Its ForeColor #120000 in 1.3 is the
+   system colour &H80000012& with the high bit lost (Q-91). */
+html[data-look="classic"] #f5 #lx { left: 8px; top: 8px; width: 17px; }
 html[data-look="classic"] #ly { left: 72px; top: 8px; width: 9px; }
 html[data-look="classic"] #lz { left: 136px; top: 8px; width: 9px; }
 
@@ -2002,7 +2081,7 @@ html[data-look="classic"] #tz {
 
 html[data-look="classic"] #tx { left: 16px; top: 8px; color: var(--c-lcd-x); }
 html[data-look="classic"] #ty { left: 80px; top: 8px; color: var(--c-lcd-y); }
-html[data-look="classic"] #tz { left: 144px; top: 8px; height: 21px; color: var(--c-lcd-z); }
+html[data-look="classic"] #tz { left: 144px; top: 8px; color: var(--c-lcd-z); }
 
 html[data-look="classic"] #label3-1 { left: 1px; top: 10px; width: 17px; height: 17px; }
 html[data-look="classic"] #d3-zoomin { left: 16px; top: 10px; }
@@ -2054,38 +2133,63 @@ html[data-look="classic"] #label1-f5 {
 }
 
 /*
- * 11. F6 Farben/Texturen (C-170, C-171). The colour frame takes the colour
- * of the selected body, which the script sets as an inline background.
+ * 11. F6 Farben/Texturen at the record of 3D_BAU.EXE (R-38, source-modules
+ * 7.1): a client of 244 by 86 pixels with the frame TEXTUR at 0/0/241/49
+ * holding CB3 at 8/16/225/21, and under it the frame FARBE at 0/48/241/37
+ * holding the button Farbe at 8/88 of 65 by 25. The frame FARBE is
+ * #e0e0e0 until a body is selected and then takes the colour of the body,
+ * which the script sets as an inline background.
  */
 
 html[data-look="classic"] #frame11 {
   position: absolute;
-  left: 8px;
-  top: 4px;
-  width: 228px;
-  height: 80px;
+  left: 0;
+  top: 0;
+  width: 241px;
+  height: 49px;
 }
 
-html[data-look="classic"] #frame11 > legend {
-  left: 2px;
-}
-
-html[data-look="classic"] #cb3 { left: 8px; top: 20px; width: 212px; height: 21px; }
+html[data-look="classic"] #cb3 { left: 8px; top: 16px; width: 225px; height: 21px; }
 
 html[data-look="classic"] #frame-farbe {
   position: absolute;
-  left: 8px;
-  top: 92px;
-  width: 228px;
-  height: 72px;
-  background-color: #fff;
+  left: 0;
+  top: 48px;
+  width: 241px;
+  height: 37px;
+  background-color: var(--c-frame-light);
 }
 
+/* The caption FARBE keeps the black of a Frame of Visual Basic on every
+   colour of a body, as only BackColor of Frame11 changes. */
 html[data-look="classic"] #frame-farbe > legend {
-  display: none;
+  color: #000;
 }
 
-html[data-look="classic"] #bcolor { left: 8px; top: 20px; width: 212px; height: 22px; }
+/* A body with a texture hatches the frame FARBE with the diagonal hatch
+   brush of Windows, HS_BDIAGONAL, in the colour of the text that the
+   script sets to contrast with the body (M-190). The frame becomes a
+   stacking context, so the hatch lies over its colour and under the
+   etched edge, the caption and the button. */
+html[data-look="classic"] #frame-farbe[data-textured] {
+  isolation: isolate;
+}
+
+html[data-look="classic"] #frame-farbe[data-textured]::after {
+  content: "" !important;
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 8px;
+  bottom: 2px;
+  z-index: -1;
+  background: currentColor;
+  -webkit-mask: var(--c-img-hatch) repeat 0 0 / 8px 8px;
+  mask: var(--c-img-hatch) repeat 0 0 / 8px 8px;
+  pointer-events: none;
+}
+
+html[data-look="classic"] #bcolor { left: 88px; top: 8px; width: 65px; height: 25px; }
 
 /*
  * 12. Dialogs: the Windows 98 edge, the purple caption and no backdrop.
@@ -2344,6 +2448,19 @@ html[data-look="classic"] #msgbox .c-msgbox-text {
   white-space: pre-line;
 }
 
+html[data-look="classic"] #msgbox .c-msgbox-icon:empty {
+  display: none;
+}
+
+/* The input line of Umbenennen, the InputBox of Visual Basic, under the
+   text across the width of the box (D-17, R-42). */
+html[data-look="classic"] #msgbox-input {
+  display: block;
+  width: calc(100% - 8px);
+  height: 19px;
+  margin: -6px 4px 14px;
+}
+
 html[data-look="classic"] #msgbox .c-msgbox-buttons {
   display: flex;
   justify-content: center;
@@ -2411,19 +2528,110 @@ html[data-look="classic"] #screen-dialog label > select {
   margin-left: auto;
 }
 
-/* Hilfe. */
+/* Hilfe: a property sheet of Windows 98 with the three tabs Bedienung,
+   Tasten and POV-Referenz over a raised page. The dialog keeps its height
+   while the pages change, and only the page under the tabs scrolls. */
 html[data-look="classic"] #help-dialog {
   width: 560px;
+  height: min(600px, calc(100vh - 24px));
 }
 
 html[data-look="classic"] #help-dialog .help-client {
-  max-height: calc(100vh - 80px);
-  overflow: auto;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The tabs stand on the page. The chosen one is two pixels taller and
+   wider than the others and covers the top edge of the page below it, so
+   tab and page join as on Windows 98. */
+html[data-look="classic"] #help-dialog .help-tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  height: 21px;
+  margin: 0;
+  padding: 0 0 0 2px;
+}
+
+html[data-look="classic"] #help-dialog .help-tab {
+  position: relative;
+  flex: none;
+  width: auto;
+  min-width: 0;
+  height: 19px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 6px;
+  background: var(--c-face);
+  color: #000;
+  font: 11px/18px var(--c-font);
+  box-shadow: inset 1px 1px #fff, inset -1px 0 #000, inset -2px 0 #808080;
+  clip-path: polygon(0 2px, 2px 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
+}
+
+html[data-look="classic"] #help-dialog .help-tab[aria-selected="true"] {
+  z-index: 2;
+  height: 23px;
+  margin: 0 -2px -2px;
+  padding: 0 8px;
+  line-height: 20px;
+}
+
+html[data-look="classic"] #help-dialog .help-tab:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: -3px;
+}
+
+/* The page has the raised edge of a property sheet. A real border holds
+   its outer line, so the scroll bar stands inside it. */
+html[data-look="classic"] #help-dialog .help-page {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 0 10px;
+  padding: 10px 8px 2px 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid;
+  border-color: #fff #000 #000 #fff;
+  background: var(--c-face);
+  box-shadow: inset 1px 1px #dfdfdf, inset -1px -1px #808080;
 }
 
 html[data-look="classic"] #help-dialog h2 {
   margin: 0 0 6px;
   font: 700 13px/16px var(--c-font);
+}
+
+html[data-look="classic"] #help-dialog h3 {
+  margin: 12px 0 4px;
+  font: 700 11px/13px var(--c-font);
+}
+
+/* The corrected samples of the POV reference in the sunken white field of
+   a multiline TextBox, in Courier New, scrolling sideways where a line runs
+   wider than the page. */
+html[data-look="classic"] #help-dialog pre.help-code {
+  margin: 0 0 8px;
+  padding: 3px 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid;
+  border-color: #808080 #fff #fff #808080;
+  background: #fff;
+  color: #000;
+  font: 12px/14px "Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", monospace;
+  white-space: pre;
+  tab-size: 2;
+  box-shadow: inset 1px 1px #000, inset -1px -1px #dfdfdf;
+}
+
+html[data-look="classic"] #help-dialog pre.help-code > code {
+  font: inherit;
 }
 
 html[data-look="classic"] #help-dialog p {

@@ -18,17 +18,40 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="classic.css">
   <script>
-    // The look and the theme are set before the first paint, so the page never flashes.
-    try {
-      const look = localStorage.getItem('bausteine.look') === 'classic' ? 'classic' : 'modern';
-      const saved = localStorage.getItem('bausteine.theme');
-      const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.dataset.look = look;
-      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    } catch {
-      document.documentElement.dataset.look = 'modern';
-      document.documentElement.dataset.theme = 'light';
-    }
+    // The look and the theme are set before the first paint, so the page never flashes. The
+    // parameters look and theme of the address win over the stored values for this visit and
+    // are never written back. The classic look lists its behaviour toggles on the root element,
+    // as look.js does after every switch. A window narrower than 800 pixels starts in the modern
+    // look, since the smallest screen of version 1.3 was 800 pixels wide, and the stored choice
+    // waits for a wider window.
+    (() => {
+      const root = document.documentElement;
+      const params = new URLSearchParams(location.search);
+      const read = (key) => {
+        try {
+          return localStorage.getItem(key);
+        } catch {
+          return null;
+        }
+      };
+      const asked = (name, values) => (values.includes(params.get(name)) ? params.get(name) : null);
+      const wanted = asked('look', ['modern', 'classic']) ?? (read('bausteine.look') === 'classic' ? 'classic' : 'modern');
+      const look = window.innerWidth >= 800 ? wanted : 'modern';
+      const theme = asked('theme', ['light', 'dark']) ?? read('bausteine.theme');
+      let dark = theme === 'dark';
+      if (!theme) {
+        try {
+          dark = matchMedia('(prefers-color-scheme: dark)').matches;
+        } catch {
+          dark = false;
+        }
+      }
+      root.dataset.look = look;
+      root.dataset.theme = dark ? 'dark' : 'light';
+      root.dataset.lookToggle = look === 'classic'
+        ? 'raw-zoom empty-status label-clip unscaled-slide no-orbit snap-whole classic-captions cavalier origin-13 windows vga-icons'
+        : '';
+    })();
   </script>
 </head>
 <body class="c-desktop">
@@ -37,7 +60,7 @@
     <!-- The left dock: the tool bar F3 above the body bar F2. -->
     <div class="dock dock-left">
       <section id="f3" class="c-win tool-window" data-border="tool" aria-label="Werkzeuge">
-        <header class="win-title"><span class="win-caption"></span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
+        <header class="win-title"><span class="win-caption" data-classic-caption="">Werkzeuge</span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
         <div class="win-client">
           <div id="tb1" class="toolbar" role="toolbar" aria-orientation="vertical" aria-label="Werkzeuge">
             <button class="tb-button" type="button" data-tool="1" data-tip="Position" aria-label="Position"></button>
@@ -179,26 +202,29 @@
         <div class="win-client">
           <section id="views" class="views" aria-label="Ansichten">
             <canvas id="canvas"></canvas>
-            <div class="view" data-view="1" aria-label="Kreuzriss">
+            <div class="view" data-view="1" role="group" tabindex="0" aria-label="Kreuzriss" aria-describedby="views-help">
               <div class="view-head"><span class="view-name">Kreuzriss</span><span class="view-axes">x ← · z ↑</span><button class="view-save icon-button small" type="button" data-icon="camera" title="Bild speichern"></button><button class="view-max icon-button small" type="button" data-icon="expand" title="Vergrößern"></button></div>
               <canvas class="view-overlay"></canvas>
             </div>
-            <div class="view" data-view="0" aria-label="Aufriss">
+            <div class="view" data-view="0" role="group" tabindex="0" aria-label="Aufriss" aria-describedby="views-help">
               <div class="view-head"><span class="view-name">Aufriss</span><span class="view-axes">y → · z ↑</span><button class="view-save icon-button small" type="button" data-icon="camera" title="Bild speichern"></button><button class="view-max icon-button small" type="button" data-icon="expand" title="Vergrößern"></button></div>
               <canvas class="view-overlay"></canvas>
             </div>
-            <div class="view" data-view="3" aria-label="Schrägriss">
+            <div class="view" data-view="3" role="group" tabindex="0" aria-label="Schrägriss" aria-describedby="views-help">
               <div class="view-head"><span class="view-name">Schrägriss</span><span class="view-axes" id="oblique-mode">Drehen: ziehen · Zoom: Klick oder Mausrad</span><button class="view-save icon-button small" type="button" data-icon="camera" title="Bild speichern"></button><button class="view-max icon-button small" type="button" data-icon="expand" title="Vergrößern"></button></div>
               <canvas class="view-overlay"></canvas>
             </div>
-            <div class="view" data-view="2" aria-label="Grundriss">
+            <div class="view" data-view="2" role="group" tabindex="0" aria-label="Grundriss" aria-describedby="views-help">
               <div class="view-head"><span class="view-name">Grundriss</span><span class="view-axes">y → · x ↓</span><button class="view-save icon-button small" type="button" data-icon="camera" title="Bild speichern"></button><button class="view-max icon-button small" type="button" data-icon="expand" title="Vergrößern"></button></div>
               <canvas class="view-overlay"></canvas>
             </div>
             <div id="fallback" class="fallback" hidden>
               <h2>WebGPU ist hier nicht verfügbar</h2>
               <p id="fallback-text">3D-Bausteine zeichnet mit WebGPU. Ein aktueller Chrome, Edge, Firefox oder Safari zeigt die Ansichten.</p>
+              <pre id="fallback-detail" class="fallback-detail" hidden></pre>
+              <button id="fallback-reload" class="c-button" type="button">Neu laden</button>
             </div>
+            <p id="views-help" hidden>Beim Einfügen markiert ein Klick in einen Riss einen Punkt. Im Schrägriss zoomt ein Klick hinein und die rechte Taste heraus. Die rechte Taste schiebt einen Riss, das Mausrad zoomt, die Tasten 1 bis 4 vergrößern einen Riss und 0 zeigt alle.</p>
           </section>
         </div>
       </section>
@@ -212,14 +238,14 @@
         </fieldset>
         <fieldset id="f5-frame1" class="c-frame f5-frame">
           <span id="label3-1" class="c-label">3D</span>
-          <button id="d3-zoomin" class="c-button c-mini" type="button" title="3D hineinzoomen">&lt;</button>
-          <button id="d3-zoomout" class="c-button c-mini" type="button" title="3D herauszoomen">&gt;</button>
+          <button id="d3-zoomin" class="c-button c-mini" type="button" title="3D hineinzoomen" data-tip="3D hineinzoomen (&lt;)">&lt;</button>
+          <button id="d3-zoomout" class="c-button c-mini" type="button" title="3D herauszoomen" data-tip="3D herauszoomen (&gt;)">&gt;</button>
         </fieldset>
         <fieldset id="f5-frame6" class="c-frame f5-frame">
           <span id="label2" class="c-label">2D</span>
           <input id="tzoom" class="c-text c-blue" type="text" readonly tabindex="-1" aria-label="2D-Zoom">
-          <button id="d2-zoomin" class="c-button c-mini" type="button" title="2D hineinzoomen">&lt;</button>
-          <button id="d2-zoomout" class="c-button c-mini" type="button" title="2D herauszoomen">&gt;</button>
+          <button id="d2-zoomin" class="c-button c-mini" type="button" title="2D hineinzoomen" data-tip="2D hineinzoomen (&lt;)">&lt;</button>
+          <button id="d2-zoomout" class="c-button c-mini" type="button" title="2D herauszoomen" data-tip="2D herauszoomen (&gt;)">&gt;</button>
           <output id="tstatus" class="c-text c-blue" aria-live="polite"></output>
           <span id="label1-f5" class="c-label" title="Riss unter dem Zeiger"></span>
         </fieldset>
@@ -247,127 +273,130 @@
             <section class="tab-page" data-page="koerper" role="tabpanel">
               <fieldset id="frame8" class="c-frame">
                 <legend>OBJEKTE:</legend>
-                <div id="cb2" class="c-list" role="listbox" tabindex="0" aria-label="Objekte"></div>
+                <div id="cb2" class="c-list" role="listbox" tabindex="0" aria-label="Objekte" data-tip="Die Objekte der Szene, ein Klick wählt eines zum Ändern"></div>
               </fieldset>
               <fieldset id="frame1" class="c-frame">
                 <legend>GEOMETRIEDATEN:</legend>
                 <div id="cb1" class="c-combo">
-                  <input id="cb1-edit" class="c-combo-edit" type="text" spellcheck="false" autocomplete="off" aria-label="Körper">
-                  <button class="c-combo-arrow" type="button" tabindex="-1" aria-label="Liste öffnen"></button>
+                  <input id="cb1-edit" class="c-combo-edit" type="text" spellcheck="false" autocomplete="off" aria-label="Körper" data-tip="Körper oder CSG-Befehl wählen oder eintippen">
+                  <button class="c-combo-arrow" type="button" tabindex="-1" aria-label="Liste öffnen" data-tip="Liste der Körper öffnen"></button>
                   <div class="c-combo-list" role="listbox" hidden></div>
                 </div>
                 <span id="l1-1" class="c-label geo-label"></span>
                 <span id="l1-2" class="c-label geo-label" hidden></span>
                 <span id="l1-3" class="c-label geo-label" hidden></span>
-                <input id="t1-1" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="x">
-                <input id="t1-2" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="y">
-                <input id="t1-3" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="z">
+                <input id="t1-1" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="x" data-tip="x eintippen oder in einem Riss markieren">
+                <input id="t1-2" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="y" data-tip="y eintippen oder in einem Riss markieren">
+                <input id="t1-3" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="z" data-tip="z eintippen oder in einem Riss markieren">
                 <span id="l1-4" class="c-label geo-label"></span>
                 <span id="l1-5" class="c-label geo-label" hidden></span>
                 <span id="l1-6" class="c-label geo-label"></span>
-                <input id="t1-4" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="Maß x">
-                <input id="t1-5" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="Maß y">
-                <input id="t1-6" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="Maß z">
+                <input id="t1-4" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="Maß x" data-tip="Maß eintippen oder in einem Riss markieren">
+                <input id="t1-5" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="Maß y" data-tip="Maß eintippen oder in einem Riss markieren">
+                <input id="t1-6" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="Maß z" data-tip="Maß eintippen oder in einem Riss markieren">
                 <span id="l1-7" class="c-label geo-label">Drehung um X,Y,Z - Achse</span>
                 <span id="l1-8" class="c-label geo-label" hidden></span>
                 <span id="l1-9" class="c-label geo-label" hidden></span>
-                <input id="t1-7" class="c-text c-lcd t1 rot" type="text" inputmode="decimal" aria-label="Drehung x">
-                <input id="t1-8" class="c-text c-lcd t1 rot" type="text" inputmode="decimal" aria-label="Drehung y">
-                <input id="t1-9" class="c-text c-lcd t1 rot" type="text" inputmode="decimal" aria-label="Drehung z">
+                <input id="t1-7" class="c-text c-lcd t1 rot" type="text" inputmode="decimal" aria-label="Drehung x" data-tip="Drehung um die x-Achse in Grad">
+                <input id="t1-8" class="c-text c-lcd t1 rot" type="text" inputmode="decimal" aria-label="Drehung y" data-tip="Drehung um die y-Achse in Grad">
+                <input id="t1-9" class="c-text c-lcd t1 rot" type="text" inputmode="decimal" aria-label="Drehung z" data-tip="Drehung um die z-Achse in Grad">
                 <span id="l1-10" class="c-label geo-label" hidden>innerer Radius</span>
-                <input id="t1-10" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="innerer Radius" hidden>
+                <input id="t1-10" class="c-text c-lcd t1 free" type="text" inputmode="decimal" aria-label="innerer Radius" hidden data-tip="Innerer Radius der Disc">
                 <span id="l1-11" class="c-label geo-label">Name</span>
-                <input id="t1-11" class="c-text t1-name" type="text" maxlength="60" spellcheck="false" aria-label="Name">
+                <input id="t1-11" class="c-text t1-name" type="text" maxlength="60" spellcheck="false" aria-label="Name" data-tip="Name des Objekts in der Liste OBJEKTE">
                 <span id="l1-12" class="c-label geo-label">Gruppe</span>
-                <select id="t1-12" class="c-select t1-group" aria-label="Gruppe"></select>
+                <select id="t1-12" class="c-select t1-group" aria-label="Gruppe" data-tip="Die Gruppe, in der das Objekt steht"></select>
                 <p id="geo-hint" class="geo-hint" hidden></p>
               </fieldset>
               <fieldset id="frame7-0" class="c-frame">
-                <button id="btn-einf" class="c-button" type="button">Einfügen</button>
-                <button id="btn-change" class="c-button" type="button">Ändern</button>
-                <button id="btn-clear" class="c-button" type="button">Löschen</button>
+                <button id="btn-einf" class="c-button" type="button" data-tip="Körper mit diesen Werten einfügen (Enter)">Einfügen</button>
+                <button id="btn-change" class="c-button" type="button" data-tip="Werte auf den gewählten Körper anwenden">Ändern</button>
+                <button id="btn-clear" class="c-button" type="button" data-tip="Gewählten Körper löschen (Entf)">Löschen</button>
               </fieldset>
             </section>
 
             <!-- Tab 1 "Oberfläche": empty in version 1.3, colour and texture live in F6. -->
             <section class="tab-page" data-page="oberflaeche" role="tabpanel" hidden>
               <div id="surface-swatch" class="surface-swatch modern-only" aria-hidden="true"></div>
-              <p class="surface-hint">Farbe und Textur: Fenster „Farben/Texturen“ unter diesem Fenster.</p>
+              <p class="surface-hint modern-only">Farbe und Textur: Fenster „Farben/Texturen“ unter diesem Fenster.</p>
             </section>
 
             <!-- Tab 2 "Ausgabe": the text for POV-Ray, Übersetzen and Ausgeben. -->
             <section class="tab-page" data-page="ausgabe" role="tabpanel" hidden>
               <fieldset id="frame5" class="c-frame">
-                <textarea id="text1" class="c-text c-multiline" spellcheck="false" wrap="off" aria-label="POV-Text"></textarea>
+                <textarea id="text1" class="c-text c-multiline" spellcheck="false" wrap="off" aria-label="POV-Text" data-tip="Der Text für POV-Ray, Übersetzen schreibt ihn neu"></textarea>
               </fieldset>
               <textarea id="t-incl" hidden>#include "colors.inc"
 #include "textures.inc"
-#include "shapes.inc"</textarea>
-              <input id="tfname" class="c-text" type="text" spellcheck="false" aria-label="Dateiname der Ausgabe">
+#include "glass.inc"
+#include "metals.inc"
+#include "woods.inc"
+#include "stones.inc"</textarea>
+              <input id="tfname" class="c-text" type="text" spellcheck="false" aria-label="Dateiname der Ausgabe" data-tip="Pfad und Name der Datei für POV-Ray">
               <fieldset id="frame9-0" class="c-frame">
-                <button id="bpov-comp" class="c-button" type="button">Übersetzen</button>
-                <button id="bpov-save" class="c-button" type="button" disabled>Ausgeben</button>
+                <button id="bpov-comp" class="c-button" type="button" data-tip="POV-Text aus der Szene erzeugen">Übersetzen</button>
+                <button id="bpov-save" class="c-button" type="button" disabled data-tip="POV-Text als Datei speichern">Ausgeben</button>
               </fieldset>
-              <p id="pov-command" class="pov-command" title="Die Befehlszeile, mit der Version 1.3 POV-Ray startet"></p>
+              <p id="pov-command" class="pov-command" title="Die Befehlszeile, mit der Version 1.3 POV-Ray startet" data-tip="Die Befehlszeile, mit der Version 1.3 POV-Ray startet"></p>
             </section>
 
             <!-- Tab 3 "Bilder": the pictures of the Dia-Show. -->
             <section class="tab-page" data-page="bilder" role="tabpanel" hidden>
-              <div id="file1" class="c-list" role="listbox" tabindex="0" aria-label="Bilder"></div>
-              <input id="tdatei" class="c-text" type="text" readonly aria-label="Datei">
+              <div id="file1" class="c-list" role="listbox" tabindex="0" aria-label="Bilder" data-tip="Die Bilder der Dia-Show"></div>
+              <input id="tdatei" class="c-text" type="text" readonly aria-label="Datei" data-tip="Pfad des gewählten Bildes">
               <fieldset id="frame9-1" class="c-frame">
-                <button id="bbild-anz" class="c-button" type="button">Anzeigen</button>
-                <button id="bbild-beenden" class="c-button" type="button">Beenden</button>
+                <button id="bbild-anz" class="c-button" type="button" data-tip="Die Bilder als Dia-Show zeigen">Anzeigen</button>
+                <button id="bbild-beenden" class="c-button" type="button" data-tip="Die Dia-Show beenden und zum Register Körper wechseln">Beenden</button>
               </fieldset>
-              <button id="cmdia" class="c-button cmdia" type="button" title="Bild hinzufügen">…</button>
+              <button id="cmdia" class="c-button cmdia" type="button" title="Bild hinzufügen" data-tip="Bild hinzufügen">…</button>
               <input id="cmdia-file" type="file" accept="image/*" multiple hidden>
             </section>
 
             <!-- Tab 4 "Kamera": the turn of the oblique view, noch in der Testphase. -->
             <section class="tab-page" data-page="kamera" role="tabpanel" hidden>
-              <p id="label1-kamera" class="c-label" title="So steht es in Version 1.3">noch in der Testphase!!</p>
+              <p id="label1-kamera" class="c-label" title="So steht es in Version 1.3" data-tip="So steht es in Version 1.3">noch in der Testphase!!</p>
               <fieldset id="frame6" class="c-frame">
                 <legend data-classic-caption="Frame6">Drehung und Zoom</legend>
                 <label id="lhs-4" class="c-label hs-label" for="hs-4">Zoom</label>
-                <input id="hs-4" class="c-hscroll" type="range" min="50" max="500" step="1" value="100" aria-label="3D-Zoom in Prozent">
-                <input id="hst-4" class="c-text hst" type="text" inputmode="numeric" aria-label="3D-Zoom">
+                <input id="hs-4" class="c-hscroll" type="range" min="50" max="500" step="1" value="100" aria-label="3D-Zoom in Prozent" data-tip="3D-Zoom in Prozent">
+                <input id="hst-4" class="c-text hst" type="text" inputmode="numeric" aria-label="3D-Zoom" data-tip="3D-Zoom in Prozent, von 50 bis 500">
                 <label id="lhs-1" class="c-label hs-label" for="hs-1">x</label>
-                <input id="hs-1" class="c-hscroll" type="range" min="-360" max="360" step="1" value="0" aria-label="Drehung um x">
-                <input id="hst-1" class="c-text hst" type="text" inputmode="numeric" aria-label="Drehung um x in Grad">
+                <input id="hs-1" class="c-hscroll" type="range" min="-360" max="360" step="1" value="0" aria-label="Drehung um x" data-tip="Drehung des Schrägrisses um x">
+                <input id="hst-1" class="c-text hst" type="text" inputmode="numeric" aria-label="Drehung um x in Grad" data-tip="Drehung um x in Grad, von −360 bis 360">
                 <label id="lhs-2" class="c-label hs-label" for="hs-2">y</label>
-                <input id="hs-2" class="c-hscroll" type="range" min="-360" max="360" step="1" value="0" aria-label="Drehung um y">
-                <input id="hst-2" class="c-text hst" type="text" inputmode="numeric" aria-label="Drehung um y in Grad">
+                <input id="hs-2" class="c-hscroll" type="range" min="-360" max="360" step="1" value="0" aria-label="Drehung um y" data-tip="Drehung des Schrägrisses um y">
+                <input id="hst-2" class="c-text hst" type="text" inputmode="numeric" aria-label="Drehung um y in Grad" data-tip="Drehung um y in Grad, von −360 bis 360">
                 <label id="lhs-3" class="c-label hs-label" for="hs-3">z</label>
-                <input id="hs-3" class="c-hscroll" type="range" min="-360" max="360" step="1" value="0" aria-label="Drehung um z">
-                <input id="hst-3" class="c-text hst" type="text" inputmode="numeric" aria-label="Drehung um z in Grad">
+                <input id="hs-3" class="c-hscroll" type="range" min="-360" max="360" step="1" value="0" aria-label="Drehung um z" data-tip="Drehung des Schrägrisses um z">
+                <input id="hst-3" class="c-text hst" type="text" inputmode="numeric" aria-label="Drehung um z in Grad" data-tip="Drehung um z in Grad, von −360 bis 360">
               </fieldset>
-              <button id="start" class="c-button" type="button" data-classic-caption="Command1">Start</button>
-              <button id="command2" class="c-button" type="button" data-classic-caption="Command2">Stopp</button>
+              <button id="start" class="c-button" type="button" data-classic-caption="Command1" data-tip="Den Schrägriss um die eingestellten Winkel drehen">Start</button>
+              <button id="command2" class="c-button" type="button" data-classic-caption="Command2" data-tip="Die Drehung anhalten, ein Doppelklick setzt sie zurück">Stopp</button>
               <fieldset id="frame7-1" class="c-frame">
-                <button id="btn1-1" class="c-button" type="button" title="Die Kamera des Schrägrisses für die Ausgabe übernehmen">Einfügen</button>
-                <button id="btn2-1" class="c-button" type="button" title="Die Kamera der Ausgabe zurücksetzen">Löschen</button>
+                <button id="btn1-1" class="c-button" type="button" title="Die Kamera des Schrägrisses für die Ausgabe übernehmen" data-tip="Die Kamera des Schrägrisses für die Ausgabe übernehmen">Einfügen</button>
+                <button id="btn2-1" class="c-button" type="button" title="Die Kamera der Ausgabe zurücksetzen" data-tip="Die Kamera der Ausgabe zurücksetzen">Löschen</button>
               </fieldset>
             </section>
 
             <!-- Tab 5 "Einstellung": the paths behind the password of version 1.3. -->
             <section class="tab-page" data-page="einstellung" role="tabpanel" hidden>
-              <input id="tpasswd" class="c-text" type="password" autocomplete="off" aria-label="Passwort">
+              <input id="tpasswd" class="c-text" type="password" autocomplete="off" data-password-char="#" aria-label="Passwort" data-tip="Das Passwort von Version 1.3 gibt die Dateiverwaltung frei">
               <label id="lpasswd" class="c-label" for="tpasswd">Passwort</label>
               <fieldset id="frame10" class="c-frame">
                 <legend>Dateiverwaltung:</legend>
                 <label id="lhome-0" class="c-label" for="tbau-home">Stammverzeichnis 3D-Baukasten:</label>
-                <input id="tbau-home" class="c-text" type="text" spellcheck="false" disabled>
+                <input id="tbau-home" class="c-text" type="text" spellcheck="false" disabled data-tip="Das Verzeichnis von 3D-Baukasten">
                 <label id="lhome-1" class="c-label" for="tpov-home">Stammverzeichnis POV:</label>
-                <input id="tpov-home" class="c-text" type="text" spellcheck="false" disabled>
+                <input id="tpov-home" class="c-text" type="text" spellcheck="false" disabled data-tip="Das Verzeichnis von POV-Ray">
                 <label id="lhome-2" class="c-label" for="tbsp-home">Stammverzeichnis POV-Bsp:</label>
-                <input id="tbsp-home" class="c-text" type="text" spellcheck="false" disabled>
+                <input id="tbsp-home" class="c-text" type="text" spellcheck="false" disabled data-tip="Das Verzeichnis der Beispiele für POV-Ray">
                 <label id="lhome-3" class="c-label" for="tbsp-def">StandardName POV-Ausgabe:</label>
-                <input id="tbsp-def" class="c-text" type="text" spellcheck="false" disabled>
+                <input id="tbsp-def" class="c-text" type="text" spellcheck="false" disabled data-tip="Der Name der Datei für POV-Ray, wenn keiner eingetragen ist">
               </fieldset>
               <fieldset id="frame2-einst" class="c-frame">
-                <button id="bscreen" class="c-button" type="button">Bildschirmeinstellungen</button>
-                <button id="bdatei-change" class="c-button" type="button" disabled>Übernehmen</button>
-                <button id="bdatei-def" class="c-button" type="button" disabled>Standard</button>
+                <button id="bscreen" class="c-button" type="button" data-tip="Darstellung, virtuellen Bildschirm und Raster wählen">Bildschirmeinstellungen</button>
+                <button id="bdatei-change" class="c-button" type="button" disabled data-tip="Die Verzeichnisse übernehmen">Übernehmen</button>
+                <button id="bdatei-def" class="c-button" type="button" disabled data-tip="Die Verzeichnisse von Version 1.3 wiederherstellen">Standard</button>
               </fieldset>
             </section>
           </div>
@@ -379,7 +408,7 @@
         <div class="win-client">
           <fieldset id="frame11" class="c-frame">
             <legend>TEXTUR</legend>
-            <select id="cb3" class="c-select" title="Textur auswählen" aria-label="Textur"><option value="">Keine</option></select>
+            <select id="cb3" class="c-select" title="Textur auswählen" data-tip="Textur auswählen" aria-label="Textur"><option value="">Keine</option></select>
           </fieldset>
           <fieldset id="frame-farbe" class="c-frame">
             <legend>FARBE</legend>
@@ -422,11 +451,13 @@
     </div>
   </dialog>
 
-  <!-- The message box of Visual Basic, MsgBox. -->
-  <dialog id="msgbox" class="c-win c-msgbox dialog-window" data-border="dialog">
+  <!-- The message box of Visual Basic, MsgBox. It is named by its caption, by the name of the program
+       when the caption is empty, and described by its question. -->
+  <dialog id="msgbox" class="c-win c-msgbox dialog-window" data-border="dialog" role="alertdialog" aria-label="3D-Baukasten" aria-labelledby="msgbox-title" aria-describedby="msgbox-text">
     <header class="win-title"><span class="win-caption" id="msgbox-title"></span><span class="win-buttons"><button class="win-close" type="button" aria-label="Schließen"></button></span></header>
     <div class="win-client">
       <div class="c-msgbox-body"><span class="c-msgbox-icon" aria-hidden="true"></span><p class="c-msgbox-text" id="msgbox-text"></p></div>
+      <input id="msgbox-input" class="c-text msgbox-input" type="text" spellcheck="false" autocomplete="off" maxlength="60" aria-labelledby="msgbox-text" hidden>
       <div class="c-msgbox-buttons" id="msgbox-buttons"></div>
     </div>
   </dialog>
@@ -478,7 +509,7 @@
         <tr><td>CSG</td><td>Im Feld GEOMETRIEDATEN „CSG-Vereinigung“, „CSG-Differenz“, „CSG-Durchschnitt“ oder „CSG-Summe“ einfügen, dann die Glieder, zuletzt „CSG-Ende“. Bei der Differenz bleibt das erste Glied, die weiteren werden abgezogen.</td></tr>
         <tr><td>Neue Körper</td><td>„#Neu“ beginnt einen neuen Körper, „Neu_Ende“ schließt ihn ab. Sein Name steht danach in der Liste der Körper und lässt sich beliebig oft einfügen.</td></tr>
         <tr><td>Ändern</td><td>Objekt in der Liste OBJEKTE wählen, Werte ändern, „Ändern“ drücken. Werkzeug „Position“: Körper im Riss ziehen. Pfeiltasten verschieben, <kbd>Bild↑</kbd> <kbd>Bild↓</kbd> in der Höhe.</td></tr>
-        <tr><td>Zoom</td><td>F5-Leiste: <kbd>&lt;</kbd> zoomt hinein, <kbd>&gt;</kbd> heraus, getrennt für 2D und 3D. Klick in den Schrägriss zoomt hinein, rechte Taste heraus, mittlere Taste zeigt ihn über alle vier Felder. Mausrad zoomt, rechte Taste schiebt.</td></tr>
+        <tr><td>Zoom</td><td>F5-Leiste: <kbd>&lt;</kbd> zoomt hinein, <kbd>&gt;</kbd> heraus, getrennt für 2D und 3D. Klick in den Schrägriss zoomt hinein, rechte Taste heraus, mittlere Taste zeigt ihn über alle vier Felder. Mausrad zoomt, rechte Taste schiebt. Beide Zoomstufen reichen von etwa 50 % bis 500 %.</td></tr>
         <tr><td>Raytracing</td><td>Werkzeug „Raytrace“ oder <kbd>R</kbd> berechnet den Schrägriss mit Schatten, Spiegelung und den Texturen von POV-Ray. „Ausgabe“ schreibt die Datei für POV-Ray.</td></tr>
         <tr><td>Darstellung</td><td>Menü Ansicht: modern oder klassisch wie Version 1.3 von 2002.</td></tr>
         <tr><td>Tasten</td><td><kbd>Strg</kbd>+<kbd>Z</kbd> rückgängig, <kbd>Strg</kbd>+<kbd>Y</kbd> wiederholen, <kbd>Strg</kbd>+<kbd>D</kbd> verdoppeln, <kbd>Entf</kbd> löschen, <kbd>Esc</kbd> abbrechen, <kbd>1</kbd> bis <kbd>4</kbd> einen Riss vergrößern, <kbd>0</kbd> alle zeigen, <kbd>F</kbd> alles zeigen.</td></tr>

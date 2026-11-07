@@ -227,7 +227,7 @@ function toSvg(size, px, width) {
     .filter((c) => runs[c])
     .map((c) => `<path fill="${VGA[c]}" d="${runs[c].join('')}"/>`)
     .join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${width}" height="${width}" shape-rendering="crispEdges" aria-hidden="true">${paths}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${width}" height="${width}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">${paths}</svg>`;
 }
 
 // A drawing is kept as a recipe and rendered the first time its key is read,
@@ -718,8 +718,10 @@ export const CLASSIC_ICONS = lazy({
   }),
 
   // The disc and the plane had blank buttons in 1.3. They get drawings in
-  // the same manner. The disc is grey with a hole and floats over the navy
-  // floor, and the plane is a thin grey blue plate on the chequered floor.
+  // the same manner (R-05 of the plan). The disc is a grey ring with a hole
+  // that floats over the navy floor under the blue sky of the sphere, and
+  // the plane is a cyan parallelogram with a teal edge that lies in the grey
+  // room of the cuboid.
   'body-disc': draw(32, (g) => {
     blueScene(g, 12);
     floorShadow(g, 18, 26, 12, 3.6);
@@ -738,15 +740,17 @@ export const CLASSIC_ICONS = lazy({
   }),
 
   'body-ebene': draw(32, (g) => {
-    roomScene(g, 15);
-    const top = poly(0, 26, 8, 16, 32, 16, 24, 26);
-    const thick = poly(0, 26, 24, 26, 24, 28, 0, 28);
-    const side = poly(24, 26, 32, 16, 32, 18, 24, 28);
-    g.fill(poly(1, 28, 25, 28, 32, 19, 32, 30, 25, 30, 1, 30), 'dk');
-    g.fill(top, (x, y) => ramp('wsbn', 0.28 + ((x + 0.5) / 32) * 0.18 + ((y - 16) / 10) * 0.12));
-    g.fill(thick, 'n');
-    g.fill(side, 'nk');
-    g.edge(top, 'w', 't');
+    roomScene(g);
+    const top = poly(1, 25, 9, 14, 31, 14, 23, 25);
+    const thick = poly(1, 25, 23, 25, 23, 27, 1, 27);
+    const side = poly(23, 25, 31, 14, 31, 16, 23, 27);
+    g.fill(poly(2, 27, 24, 27, 31, 17, 32, 17, 32, 29, 24, 29, 2, 29), 'dk');
+    // The face is cyan, a little lighter towards the light at the upper left.
+    g.fill(top, (x, y) => ramp('wcc', 0.55 + ((x + 0.5) / 32) * 0.35 + ((y - 14) / 11) * 0.2));
+    g.edge(top, 't', 'rb');
+    g.edge(top, 'w', 'lt');
+    g.fill(thick, 't');
+    g.fill(side, 'tk');
     g.edge(or(top, thick, side), 'k');
   }),
 
