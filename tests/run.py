@@ -9,6 +9,12 @@ Runs the test notebooks of 3D-Bausteine with papermill.
 
 Each executed notebook lands under tests/notebooks/out/, which is never
 committed, and the run ends with exit code 1 when any notebook fails.
+
+The notebook 90_quirks reads the checks the other notebooks passed from
+their copies under out/, so it runs last. A notebook that declares the
+parameter require_browser receives False under --fast and True otherwise,
+so a notebook of the engine leaves out the one section that needs the
+page in Chromium when the run has no browser.
 """
 
 import sys
@@ -22,13 +28,28 @@ NOTEBOOKS = HERE / "notebooks"
 OUT = NOTEBOOKS / "out"
 
 #: The notebooks that drive a browser, which --fast leaves out.
-BROWSER = ("60_", "70_", "80_")
+BROWSER = ("60_", "70_", "80_", "90_")
+
+#: The notebooks that read the results of the others and so run after them.
+LAST = ("90_",)
+
+
+def order(book):
+    """Answers the key that sorts the notebooks by name with those of LAST at the end."""
+    return (book.name.startswith(LAST), book.name)
+
+
+def parameters(book, fast):
+    """Answers the parameters of the run that the notebook `book` declares."""
+    given = {"require_browser": not fast}
+    declared = papermill.inspect_notebook(str(book))
+    return {name: value for name, value in given.items() if name in declared}
 
 
 def main(argv):
     fast = "--fast" in argv
     prefixes = [a for a in argv if not a.startswith("--")]
-    books = sorted(p for p in NOTEBOOKS.glob("*.ipynb"))
+    books = sorted(NOTEBOOKS.glob("*.ipynb"), key=order)
     if prefixes:
         books = [b for b in books if b.name.startswith(tuple(prefixes))]
     if fast:
@@ -40,6 +61,7 @@ def main(argv):
         try:
             papermill.execute_notebook(
                 str(book), str(OUT / book.name), cwd=str(HERE),
+                parameters=parameters(book, fast),
                 kernel_name="python3", progress_bar=False,
             )
             status = "passed"
